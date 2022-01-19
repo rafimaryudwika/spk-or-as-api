@@ -14,8 +14,19 @@ class CreatePendaftarsTable extends Migration
     public function up()
     {
         Schema::create('pendaftars', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->timestamp('tgl_daftar');
+            $table->id('nim');
+            $table->string('email');
+            $table->string('nama');
+            $table->string('panggilan');
+            $table->integer('id_g');
+            $table->string('tempat_lahir');
+            $table->date('tgl_lahir');
+            $table->string('alamat_pdg');
+            $table->bigInteger('no_hp');
+            $table->integer('id_j');
+            $table->integer('id_f');
+            $table->tinyInteger('daftar_ulang');
         });
     }
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\PendaftarController;
 use App\Http\Controllers\Penilaian1Controller;
+use App\Models\PenilaianTahap1;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -24,7 +25,10 @@ Route::get('/pendaftar', [PendaftarController::class, 'index']);
 Route::post('/pendaftar', [PendaftarController::class, 'store']);
 Route::get('/pendaftar/{nim}', [PendaftarController::class, 'show']);
 
-Route::get('/penilaian1', [Penilaian1Controller::class, 'index']);
+Route::get('/penilaian1', [Penilaian1Controller::class, 'index']);;
+Route::post('/penilaian1', [Penilaian1Controller::class, 'store']);
+Route::put('/penilaian1/{nim}', [Penilaian1Controller::class, 'update']);
+
 Route::get('/penilaian1/peserta1', [Penilaian1Controller::class, 'peserta']);
 Route::get('/penilaian1/nilai', [Penilaian1Controller::class, 'penilaian1']);
 Route::get('/penilaian1/table_sk1', [Penilaian1Controller::class, 'sk1_table']);
