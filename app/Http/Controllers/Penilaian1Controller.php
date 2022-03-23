@@ -18,36 +18,30 @@ class Penilaian1Controller extends Controller
     //
     public function index()
     {
-        $subkriteria = SubKriteriaTahap1::pluck('id_sk1', 'sub_kriteria');
+        $subkriteria = SubKriteriaTahap1::pluck('sub_kriteria', 'id_sk1')->toArray();
 
+        $n = 0;
         $selectQuery = '';
-
-        foreach ($subkriteria as $key => $sk1) {
-            $selectQuery =
-                'sum( case when nilai_t1.id_sk1 = ' . $sk1 . '
-            then nilai_t1.nilai else 0 end) AS \'' . $key . '\'';
+        foreach ($subkriteria as $sid => $sk1) {
+            $selectQuery .=
+                'sum(case when nilai_t1.id_sk1 =
+                (select distinct id_sk1 from nilai_t1 a order by 1 limit ' . $n . ',1)
+                then nilai end) as \'' . $sid . '\',';
+            $n++;
         }
+        $selectQuery = rtrim($selectQuery, ",");
+
         $peserta1 = PenilaianTahap1::select(
-            'peserta_t1.nim',
+            'nilai_t1.nim',
             'pendaftar.nama',
-            'nilai_t1.id_sk1',
-            'nilai_t1.nilai',
             DB::raw($selectQuery)
         )
             ->join('peserta_t1', 'nilai_t1.nim', '=', 'peserta_t1.nim')
             ->join('pendaftar', 'peserta_t1.nim', '=', 'pendaftar.nim')
             ->join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
             ->join('kriteria_t1', 'sub_kriteria_t1.id_k1', '=', 'kriteria_t1.id_k1')
-
-            ->orderBy('nim',  'asc')
-            ->orderBy('id_sk1', 'asc')
-            ->groupBy('nim')
-            ->get([
-                'peserta_t1.nim',
-                'pendaftar.nama',
-                'nilai_t1.id_sk1',
-                'nilai_t1.nilai'
-            ]);
+            ->groupBy('nilai_t1.nim')
+            ->get();
 
         $response = [
             'message' => 'Data peserta tahap 1 OR XI',
@@ -113,90 +107,158 @@ class Penilaian1Controller extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
-    public function sk1_table()
-    {
-        $subkriteria = SubKriteriaTahap1::join('kriteria_t1', 'sub_kriteria_t1.id_k1', '=', 'kriteria_t1.id_k1')
-            ->get([
-                'sub_kriteria_t1.id_sk1',
-                'sub_kriteria_t1.sub_kriteria',
-                'sub_kriteria_t1.bobot',
-            ]);
-        $response = [
-            'message' => 'Tabel sub-kriteria tahap 1',
-            'data' => $subkriteria
-        ];
-        return response()->json($response, Response::HTTP_OK);
-    }
-
-    public function krit1_table()
-    {
-        $kriteria = KriteriaTahap1::all();
-        $response = [
-            'message' => 'Table kriteria tahap 1',
-            'data' => $kriteria
-        ];
-        return response()->json($response, Response::HTTP_OK);
-    }
-
     public function calculate()
     {
-        // $sk_pluck = $sk = SubKriteriaTahap1::
-        // join('kriteria_t1', 'sub_kriteria_t1.id_k1', '=', 'kriteria_t1.id_k1')
-        // ->pluck(
-        //    'sub_kriteria_t1.id_sk1');
+        $subkriteria = SubKriteriaTahap1::pluck('id_sk1')->toArray();
 
-        // $sk_pluck->all();
+        $max = '';
 
-        // $subkriteria = SubKriteriaTahap1::all();
+        foreach ($subkriteria as $sk) {
+            $max .= PenilaianTahap1::max('nilai')
+                ->where($sk)
+                ->get();
+        }
 
-        $selectQuery = '';
-        // foreach($subkriteria as $sk1{
-        //    $selectQuery.="sum( case when nilai_t1.id_sk1 = '".$sk1->id_sk1."' then nilai_t1.nilai else 0 end) as '".$sk1->subkriteria."'','";
+        $response = [
+            'message' => 'Tabel sub-kriteria tahap 1',
+            'data' => $max
+        ];
+        return response()->json($response, Response::HTTP_OK);
+    }
+
+    public function test(Request $request)
+    {
+        // $subkriteria = SubKriteriaTahap1::pluck('id_sk1')->toArray();
+
+
+        // $valid_nim = [
+        //     'nim' => ['required']
+        // ];
+
+        // $arr = [];
+
+        // foreach ($subkriteria as $sk => $id) {
+        //     $arr['nilai_' . $sk] = ['required', 'numeric'];
+        //     $valid_new = array_merge($valid_nim, $arr);
+        // }
+        // $validator = Validator::make($request->all(), $valid_new);
+
+        // $bulk_insert = [];
+
+        // foreach ($subkriteria as $sk) {
+        //     $nilai_sk[] = 'nilai_' . $sk;
         // }
 
-        // $kriteria = KriteriaTahap1::all();
-        // $transpose=[];
-
-
-
-
-        // foreach ($subkriteria as $sk1) {
-        //     $selectQuery = 'sum( case when nilai_t1.id_sk1 = ' . $sk1->id_sk1 . '  then nilai_t1.nilai else 0 end) AS \'' . $sk1->sub_kriteria . '\'';
+        // foreach (array_combine($subkriteria, $nilai_sk) as $sk => $ns) {
+        //     $bulk_insert[] = [
+        //         'nim => $request->nim',
+        //         'id_sk1 =>' . $sk,
+        //         'nilai => $request->' . $ns
+        //     ];
         // }
 
-        //$trans_array = array($transpose);
+        // $penilaian1 = PenilaianTahap1::findOrFail($id);
+        // return $penilaian1;
 
-        $penilaian1 = PenilaianTahap1::select(
-            'nilai_t1.nim',
-            'pendaftar.nama',
-            DB::raw($selectQuery)
-        )
-            ->join('peserta_t1', 'nilai_t1.nim', '=', 'peserta_t1.nim')
+
+
+        // $id = 1810112048;
+        // foreach ($subkriteria as $sk) {
+        //     $nilai_sk[] = 'nilai_' . $sk;
+        // }
+
+        // foreach ($nilai_sk as $ns) {
+        //     $bulk_update[] = [
+        //         'nilai' => $request->$ns
+        //     ];
+        // }
+
+        // $mass_update = '';
+
+        // foreach (array_combine($subkriteria, $bulk_update) as $sk => $bulk) {
+        //     $mass_update .= PenilaianTahap1::where('nim', $id)->where('id_sk1', $sk)
+        //         ->update($bulk);
+        // }
+
+
+
+
+
+        // foreach ($subkriteria as $sk) {
+        //     $max .= PenilaianTahap1::where('nilai_t1.id_sk1', '=', $sk)
+        //         ->max('nilai');
+        // }
+
+        // foreach ($subkriteria as $sk) {
+        //     $sum .= PenilaianTahap1::where('nilai_t1.id_sk1', '=', $sk)
+        //         ->sum('nilai');
+        // }
+
+        // $nim = 1810112048;
+        $kriteria = KriteriaTahap1::pluck('id_k1', 'kriteria');
+        $nm = PenilaianTahap1::join('peserta_t1', 'nilai_t1.nim', '=', 'peserta_t1.nim')
             ->join('pendaftar', 'peserta_t1.nim', '=', 'pendaftar.nim')
-            ->join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
-            ->join('kriteria_t1', 'sub_kriteria_t1.id_k1', '=', 'kriteria_t1.id_k1')
-            ->groupBy('nilai_t1.nim')
-            ->get([
-                'nilai_t1.nim',
-                'nilai_t1.nilai',
-                'nilai_t1.id_sk1'
-            ]);
+            ->groupBy('nilai_t1.nim')->get(['nilai_t1.nim', 'pendaftar.nama']);
+
+        $i = 0;
+        foreach ($nm as $v) {
+            $nilai[$i]['NIM'] = $v->nim;
+            $nilai[$i]['Nama'] = $v->nama;
+            foreach ($kriteria as $nk => $k) {
+                $sub_k['kriteria_' . $k] = SubKriteriaTahap1::where('id_k1', $k)->get('id_sk1');
+                $match = ['nim' => $v->nim, 'id_k1' => $k];
+                if (count($sub_k['kriteria_' . $k]) > 1) {
+                    $nilai[$i][$nk] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
+                        ->where($match)->sum('nilai');
+                } elseif (count($sub_k['kriteria_' . $k]) == 1) {
+                    $nilai[$i][$nk] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
+                        ->where($match)->select('nilai')->first()->nilai;
+                }
+            }
+            $i++;
+        }
+
+        // $nm_nim[] = 'nim';
+
+        // foreach ($kriteria as $k => $v) {
+        //     $krit[] = $k;
+        // }
+        // $krit = array_merge($nm_nim, $krit);
+
+        // $nilai_new = array_combine($krit, $nilai);
+        // $nilai_new = array_combine($column, $nilai);
+        // $collect_nilai = collect($nilai);
+        // $nama_k = KriteriaTahap1::pluck('kriteria')->toArray();
+        // $arrayComb = array_combine($nama_k, $nilai);
+        // $arrayWithKey = $collect_nilai->map(function ($value, $nama_k) {
+        //     return [
+        //         "$nama_k->kriteria" => $value
+        //     ];
+        // });
+
 
 
         $response = [
-            'message' => 'id',
-            'data' => $selectQuery
+            'message' => 'Tabel nilai tahap 1',
+            'data' => $nilai
         ];
         return response()->json($response, Response::HTTP_OK);
     }
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'nim' => ['required'],
-            'id_sk1' => ['required', 'numeric'],
-            'nilai' => ['required', 'numeric'],
-        ]);
+        $subkriteria = SubKriteriaTahap1::pluck('id_sk1')->toArray();
+
+        $valid_nim = [
+            'nim' => ['required']
+        ];
+
+        foreach ($subkriteria as $sk) {
+            $arr['nilai_' . $sk] = ['required', 'numeric'];
+            $valid_new = array_merge($valid_nim, $arr);
+        }
+
+        $validator = Validator::make($request->all(), $valid_new);
 
         if ($validator->fails()) {
             return response()->json(
@@ -205,13 +267,23 @@ class Penilaian1Controller extends Controller
             );
         }
 
+        foreach ($subkriteria as $sk) {
+            $nilai_sk[] = 'nilai_' . $sk;
+        }
+
+        foreach (array_combine($subkriteria, $nilai_sk) as $sk => $ns) {
+            $bulk_insert[] = [
+                'nim' => $request->nim,
+                'id_sk1' => $sk,
+                'nilai' => $request->$ns
+            ];
+        }
         try {
-            $penilaian1 =  PenilaianTahap1::create($request->all());
+            $penilaian1 =  PenilaianTahap1::insert($bulk_insert);
             $response = [
                 'message' => 'Penilaian created',
                 'data' => $penilaian1
             ];
-
             return response()->json($response, Response::HTTP_CREATED); //code...
         } catch (QueryException $e) {
             return response()->json([
@@ -220,43 +292,17 @@ class Penilaian1Controller extends Controller
         }
     }
 
-    public function store_new(Request $request, $id)
-    {
-        //
-        $data = $request->except('_token');
-
-        $nim = $data['nim'];
-        $id_sk1 = $data['id_sk1'];
-        foreach ($id_sk1 as $key => $value) {
-            echo $key . ' - ' . $value . '<br>';
-            $objData = new stdClass();
-            $objData->nim = $id;
-            $objData->id_sk1 = $key;
-            $objData->nilai = $value;
-            $objArray[] = $objData;
-        }
-        foreach ($objArray as $data) {
-            PenilaianTahap1::create([
-                'nim' => $data->nim,
-                'id_sk1' => $data->id_sk1,
-                'nilai' => $data->nilai
-            ]);
-        }
-        // $mahasiswa = Mahasiswa::find($id);
-        // var_dump($mahasiswa);exit;
-        // $mahasiswa->crip()->sync($data);
-    }
-
 
     public function update(Request $request, $id)
     {
-        $penilaian1 = PenilaianTahap1::findOrFail($id);
+        $subkriteria = SubKriteriaTahap1::pluck('id_sk1')->toArray();
 
-        $validator = Validator::make($request->all(), [
-            'nim' => ['required'],
-            'id_sk1' => ['required', 'numeric'],
-            'nilai' => ['required', 'numeric'],
-        ]);
+
+        foreach ($subkriteria as $sk) {
+            $arr['nilai_' . $sk] = ['required', 'numeric'];
+        }
+
+        $validator = Validator::make($request->all(), $arr);
 
         if ($validator->fails()) {
             return response()->json(
@@ -265,66 +311,28 @@ class Penilaian1Controller extends Controller
             );
         }
 
-        try {
-            $penilaian1->update($request->all());
-            $response = [
-                'message' => 'Penilaian updated',
-                'data' => $penilaian1
+        foreach ($subkriteria as $sk) {
+            $nilai_sk[] = 'nilai_' . $sk;
+        }
+
+        foreach ($nilai_sk as $ns) {
+            $bulk_update[] = [
+                'nilai' => $request->$ns
             ];
-
-            return response()->json($response, Response::HTTP_OK); //code...
-        } catch (QueryException $e) {
-            return response()->json([
-                'message' => "Failed " . $e->errorInfo
-            ]);
-        }
-    }
-
-    public function update_new(Request $request, $id)
-    {
-        $data = $request->except('_token');
-        $nilai_id = $data['id_nilai'];
-        $kriteria_id = $data['kriteria_id'];
-        foreach ($nilai_id as $nilai) {
-            $nilaiData = new stdClass();
-            $nilaiData->id = $nilai;
-            $nilaiArray[] = $nilaiData;
         }
 
-        $i = 0;
-        foreach ($kriteria_id as $key => $value) {
-            $objData = new stdClass();
-            $objData->id_nilai = $nilaiArray[$i]->id;
-            $objData->mahasiswa_id = $id;
-            $objData->kriteria_id = $key;
-            $objData->nilai = $value;
-            $objArray[] = $objData;
-            $i++;
-        }
+        $mass_update = '';
 
-        foreach ($objArray as $data) {
-            $save = PenilaianTahap1::find($data->id_nilai);
-            $save->nilai_alt = $data->nilai;
-        }
-
-        $validator = Validator::make($request->all(), [
-            'nim' => ['required'],
-            'id_sk1' => ['required', 'numeric'],
-            'nilai' => ['required', 'numeric'],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(
-                $validator->errors(),
-                Response::HTTP_UNPROCESSABLE_ENTITY
-            );
+        foreach (array_combine($subkriteria, $bulk_update) as $sk => $bulk) {
+            $mass_update .= PenilaianTahap1::where('nim', $id)->where('id_sk1', $sk)
+                ->update($bulk);
         }
 
         try {
-            $save->update($request->all());
+            $mass_update;
             $response = [
                 'message' => 'Penilaian updated',
-                'data' => $save
+                'data' => $mass_update
             ];
 
             return response()->json($response, Response::HTTP_OK); //code...
@@ -338,12 +346,40 @@ class Penilaian1Controller extends Controller
     public function show($id)
     {
         //
-        $pendaftar = PenilaianTahap1::findOrFail($id);
-        $response = [
-            'message' => 'Detail Penilaian Peserta',
-            'data' => $pendaftar
-        ];
+        $subkriteria = SubKriteriaTahap1::pluck('id_sk1')->toArray();
 
+        $n = 0;
+        $selectQuery = '';
+        foreach ($subkriteria as $sid) {
+            $selectQuery .=
+                'sum(case when nilai_t1.id_sk1 =
+                (select distinct id_sk1 from nilai_t1 a order by 1 limit ' . $n . ',1)
+                then nilai end) as \'' . $sid . '\',';
+            $n++;
+        }
+        $selectQuery = rtrim($selectQuery, ",");
+
+        $peserta1 = PenilaianTahap1::select(
+            'nilai_t1.nim',
+            'pendaftar.nama',
+            'gender.gender',
+            'fakultas.fakultas',
+            DB::raw($selectQuery)
+        )
+            ->join('peserta_t1', 'nilai_t1.nim', '=', 'peserta_t1.nim')
+            ->join('pendaftar', 'peserta_t1.nim', '=', 'pendaftar.nim')
+            ->join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
+            ->join('kriteria_t1', 'sub_kriteria_t1.id_k1', '=', 'kriteria_t1.id_k1')
+            ->join('fakultas', 'pendaftar.id_f', '=', 'fakultas.id_f')
+            ->join('gender', 'pendaftar.id_g', '=', 'gender.id_g')
+            ->groupBy('nilai_t1.nim')
+            ->where('nilai_t1.nim', $id)
+            ->get();
+
+        $response = [
+            'message' => 'Data peserta tahap 1 OR XI',
+            'data' => $peserta1
+        ];
         return response()->json($response, Response::HTTP_OK);
     }
 }
