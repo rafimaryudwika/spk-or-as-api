@@ -107,6 +107,39 @@ class Penilaian1Controller extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
+    public function nilai_kriteria()
+    {
+
+        $kriteria = KriteriaTahap1::pluck('id_k1', 'kriteria');
+        $nm = PenilaianTahap1::join('peserta_t1', 'nilai_t1.nim', '=', 'peserta_t1.nim')
+            ->join('pendaftar', 'peserta_t1.nim', '=', 'pendaftar.nim')
+            ->groupBy('nilai_t1.nim')->get(['nilai_t1.nim', 'pendaftar.nama']);
+
+        $i = 0;
+        foreach ($nm as $v) {
+            $nilai[$i]['NIM'] = $v->nim;
+            $nilai[$i]['Nama'] = $v->nama;
+            foreach ($kriteria as $nk => $k) {
+                $sub_k['kriteria_' . $k] = SubKriteriaTahap1::where('id_k1', $k)->get('id_sk1');
+                $match = ['nim' => $v->nim, 'id_k1' => $k];
+                if (count($sub_k['kriteria_' . $k]) > 1) {
+                    $nilai[$i][$nk] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
+                        ->where($match)->sum('nilai');
+                } elseif (count($sub_k['kriteria_' . $k]) == 1) {
+                    $nilai[$i][$nk] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
+                        ->where($match)->select('nilai')->first()->nilai;
+                }
+            }
+            $i++;
+        }
+
+        $response = [
+            'message' => 'Tabel nilai tahap 1',
+            'data' => $nilai
+        ];
+        return response()->json($response, Response::HTTP_OK);
+    }
+
     public function calculate()
     {
         $subkriteria = SubKriteriaTahap1::pluck('id_sk1')->toArray();
@@ -195,28 +228,28 @@ class Penilaian1Controller extends Controller
         // }
 
         // $nim = 1810112048;
-        $kriteria = KriteriaTahap1::pluck('id_k1', 'kriteria');
-        $nm = PenilaianTahap1::join('peserta_t1', 'nilai_t1.nim', '=', 'peserta_t1.nim')
-            ->join('pendaftar', 'peserta_t1.nim', '=', 'pendaftar.nim')
-            ->groupBy('nilai_t1.nim')->get(['nilai_t1.nim', 'pendaftar.nama']);
+        // $kriteria = KriteriaTahap1::pluck('id_k1', 'kriteria');
+        // $nm = PenilaianTahap1::join('peserta_t1', 'nilai_t1.nim', '=', 'peserta_t1.nim')
+        //     ->join('pendaftar', 'peserta_t1.nim', '=', 'pendaftar.nim')
+        //     ->groupBy('nilai_t1.nim')->get(['nilai_t1.nim', 'pendaftar.nama']);
 
-        $i = 0;
-        foreach ($nm as $v) {
-            $nilai[$i]['NIM'] = $v->nim;
-            $nilai[$i]['Nama'] = $v->nama;
-            foreach ($kriteria as $nk => $k) {
-                $sub_k['kriteria_' . $k] = SubKriteriaTahap1::where('id_k1', $k)->get('id_sk1');
-                $match = ['nim' => $v->nim, 'id_k1' => $k];
-                if (count($sub_k['kriteria_' . $k]) > 1) {
-                    $nilai[$i][$nk] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
-                        ->where($match)->sum('nilai');
-                } elseif (count($sub_k['kriteria_' . $k]) == 1) {
-                    $nilai[$i][$nk] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
-                        ->where($match)->select('nilai')->first()->nilai;
-                }
-            }
-            $i++;
-        }
+        // $i = 0;
+        // foreach ($nm as $v) {
+        //     $nilai[$i]['NIM'] = $v->nim;
+        //     $nilai[$i]['Nama'] = $v->nama;
+        //     foreach ($kriteria as $nk => $k) {
+        //         $sub_k['kriteria_' . $k] = SubKriteriaTahap1::where('id_k1', $k)->get('id_sk1');
+        //         $match = ['nim' => $v->nim, 'id_k1' => $k];
+        //         if (count($sub_k['kriteria_' . $k]) > 1) {
+        //             $nilai[$i][$nk] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
+        //                 ->where($match)->sum('nilai');
+        //         } elseif (count($sub_k['kriteria_' . $k]) == 1) {
+        //             $nilai[$i][$nk] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
+        //                 ->where($match)->select('nilai')->first()->nilai;
+        //         }
+        //     }
+        //     $i++;
+        // }
 
         // $nm_nim[] = 'nim';
 
@@ -238,11 +271,11 @@ class Penilaian1Controller extends Controller
 
 
 
-        $response = [
-            'message' => 'Tabel nilai tahap 1',
-            'data' => $nilai
-        ];
-        return response()->json($response, Response::HTTP_OK);
+        // $response = [
+        //     'message' => 'Tabel nilai tahap 1',
+        //     'data' => $nilai
+        // ];
+        // return response()->json($response, Response::HTTP_OK);
     }
 
     public function store(Request $request)

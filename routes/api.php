@@ -30,6 +30,7 @@ Route::get('/kriteria1', [Kriteria1Controller::class, 'index']);
 Route::get('/subkriteria1', [SubKriteria1Controller::class, 'index']);
 
 Route::get('/penilaian1', [Penilaian1Controller::class, 'index']);
+Route::get('/penilaian1/kriteria_only', [Penilaian1Controller::class, 'nilai_kriteria']);
 Route::get('/penilaian1/show/{nim}', [Penilaian1Controller::class, 'show']);
 Route::post('/penilaian1', [Penilaian1Controller::class, 'store']);
 Route::put('/penilaian1/{nim}', [Penilaian1Controller::class, 'update']);
