@@ -35,5 +35,6 @@ Route::get('/penilaian1/show/{nim}', [Penilaian1Controller::class, 'show']);
 Route::post('/penilaian1', [Penilaian1Controller::class, 'store']);
 Route::put('/penilaian1/{nim}', [Penilaian1Controller::class, 'update']);
 Route::get('/penilaian1/peserta', [Penilaian1Controller::class, 'peserta']);
+Route::get('/penilaian1/calculate', [Penilaian1Controller::class, 'calculate']);
 
 Route::get('/penilaian1/test', [Penilaian1Controller::class, 'test']);

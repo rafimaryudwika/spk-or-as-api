@@ -142,15 +142,62 @@ class Penilaian1Controller extends Controller
 
     public function calculate()
     {
-        $subkriteria = SubKriteriaTahap1::pluck('id_sk1')->toArray();
 
-        $max = '';
+        $kriteria = KriteriaTahap1::pluck('id_k1', 'kriteria');
+        $nm = PenilaianTahap1::join('peserta_t1', 'nilai_t1.nim', '=', 'peserta_t1.nim')
+            ->join('pendaftar', 'peserta_t1.nim', '=', 'pendaftar.nim')
+            ->groupBy('nilai_t1.nim')->get(['nilai_t1.nim', 'pendaftar.nama']);
 
-        foreach ($subkriteria as $sk) {
-            $max .= PenilaianTahap1::max('nilai')
-                ->where($sk)
-                ->get();
+        $i = 0;
+        foreach ($nm as $v) {
+            $nilai[$i]['NIM'] = $v->nim;
+            $nilai[$i]['Nama'] = $v->nama;
+            foreach ($kriteria as $nk => $k) {
+                $sub_k['kriteria_' . $k] = SubKriteriaTahap1::where('id_k1', $k)->get('id_sk1');
+                $match = ['nim' => $v->nim, 'id_k1' => $k];
+                if (count($sub_k['kriteria_' . $k]) > 1) {
+                    $nilai[$i][$nk] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
+                        ->where($match)->sum('nilai');
+                } elseif (count($sub_k['kriteria_' . $k]) == 1) {
+                    $nilai[$i][$nk] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
+                        ->where($match)->select('nilai')->first()->nilai;
+                }
+            }
+            $i++;
         }
+
+        foreach ($kriteria as $nk => $k) {
+            $max[$nk] = collect($nilai)->max($nk);
+        }
+
+        // return array_column($max, 'Wawancara');
+
+        $nilai_col = collect($nilai);
+        $max_col = collect($max);
+        // // $j = 0;
+        // foreach ($nilai_collection as $nks => $n) {
+        //     $normalisasi = $n->pluck('NIM');
+        //     // $normalisasi[$j]['NIM'] = $n->pluck('NIM');
+        //     // $normalisasi[$j]['Nama'] = array_column($nks, 'Nama');
+        //     // foreach ($max as $nk => $m) {
+        //     //     $normalisas[$j][$nk] = array_column($n, $nk);
+        //     // }
+        //     // $j++;
+        // }
+
+        $nimmm = 1810953036;
+
+
+
+        foreach ($nilai as $nk => $v) {
+            $kritr = $nilai_col->pluck('Wawancara');
+            foreach ($max as $m) {
+                $normalization = $kritr / ($max_col->pluck($m));
+            }
+        }
+
+        return $$normalization;
+
 
         $response = [
             'message' => 'Tabel sub-kriteria tahap 1',
