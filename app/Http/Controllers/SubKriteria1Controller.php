@@ -17,11 +17,13 @@ class SubKriteria1Controller extends Controller
     {
         //
         $subkriteria1 = SubKriteriaTahap1::join('kriteria_t1', 'sub_kriteria_t1.id_k1', '=', 'kriteria_t1.id_k1')
-            ->get([
-                'kriteria_t1.kriteria',
-                'sub_kriteria_t1.sub_kriteria',
-                'sub_kriteria_t1.bobot'
-            ]);
+            ->pluck(
+                'kriteria_t1.id_k1',
+                'sub_kriteria_t1.id_sk1'
+            );
+
+        foreach ($subkriteria1 as $nsk1 => $sk1) {
+        }
 
         $response = [
             'message' => 'Data sub-kriteria tahap 1 OR',
