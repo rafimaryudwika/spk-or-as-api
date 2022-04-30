@@ -15,7 +15,8 @@ class CreateJurusansTable extends Migration
     {
         Schema::create('jurusans', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->foreignId('fakultas_id');
+            $table->string('jurusan');
         });
     }
 

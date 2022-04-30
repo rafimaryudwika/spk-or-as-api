@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KriteriaTahap1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Models\KriteriaTahap1;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Validator;
 
 class Kriteria1Controller extends Controller
 {
@@ -17,6 +19,7 @@ class Kriteria1Controller extends Controller
     {
         //
         $kriteria = KriteriaTahap1::get([
+            'kriteria_t1.id_k1',
             'kriteria_t1.kriteria',
             'kriteria_t1.bobot'
         ]);
@@ -37,7 +40,30 @@ class Kriteria1Controller extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'kriteria' => 'required|string',
+            'bobot' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                $validator->errors(),
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        try {
+            $kriteria =  KriteriaTahap1::create($request->all());
+            $response = [
+                'message' => 'Kriteria created',
+                'data' => $kriteria
+            ];
+            return response()->json($response, Response::HTTP_CREATED); //code...
+        } catch (QueryException $e) {
+            return response()->json([
+                'message' => "Failed " . $e->errorInfo
+            ]);
+        }
     }
 
     /**
@@ -60,7 +86,32 @@ class Kriteria1Controller extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $kriteria = KriteriaTahap1::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'kriteria' => 'required|string',
+            'bobot' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                $validator->errors(),
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        try {
+            $kriteria->update($request->all());
+            $response = [
+                'message' => 'Kriteria created',
+                'data' => $kriteria
+            ];
+            return response()->json($response, Response::HTTP_OK); //code...
+        } catch (QueryException $e) {
+            return response()->json([
+                'message' => "Failed " . $e->errorInfo
+            ]);
+        }
     }
 
     /**

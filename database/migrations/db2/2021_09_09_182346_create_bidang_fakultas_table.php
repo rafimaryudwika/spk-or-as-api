@@ -15,7 +15,7 @@ class CreateBidangFakultasTable extends Migration
     {
         Schema::create('bidang_fakultas', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->string('bidang_f');
         });
     }
 

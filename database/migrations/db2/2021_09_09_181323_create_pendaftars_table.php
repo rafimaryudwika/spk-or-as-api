@@ -15,18 +15,18 @@ class CreatePendaftarsTable extends Migration
     {
         Schema::create('pendaftars', function (Blueprint $table) {
             $table->timestamp('tgl_daftar');
-            $table->id('nim');
+            $table->id('nim')->unique();
             $table->string('email');
             $table->string('nama');
             $table->string('panggilan');
-            $table->integer('id_g');
+            $table->foreignId('gender_id');
             $table->string('tempat_lahir');
             $table->date('tgl_lahir');
             $table->string('alamat_pdg');
             $table->bigInteger('no_hp');
-            $table->integer('id_j');
-            $table->integer('id_f');
-            $table->tinyInteger('daftar_ulang');
+            $table->foreignId('fakultas_id');
+            $table->foreignId('jurusan_id');
+            $table->boolean('daftar_ulang');
         });
     }
 

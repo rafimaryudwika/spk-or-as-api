@@ -15,7 +15,8 @@ class CreateFakultasTable extends Migration
     {
         Schema::create('fakultas', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->foreignId('bidang_f_id');
+            $table->string('fakultas');
         });
     }
 

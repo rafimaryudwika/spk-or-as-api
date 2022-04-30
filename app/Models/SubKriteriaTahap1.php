@@ -2,13 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\KriteriaTahap1;
+use App\Models\PenilaianTahap1;
 use Illuminate\Database\Eloquent\Model;
+use GeneaLabs\LaravelModelCaching\Traits\Cachable;
 
 class SubKriteriaTahap1 extends Model
 {
+    use Cachable;
+
     //
     protected $table = 'sub_kriteria_t1';
-    protected $primarykey = 'id_sk1';
+    protected $primaryKey = 'id_sk1';
 
     public function PenilaianTahap1()
     {

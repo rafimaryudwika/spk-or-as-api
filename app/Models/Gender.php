@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use GeneaLabs\LaravelModelCaching\Traits\Cachable;
 
 class Gender extends Model
 {
-    protected $table="gender";
+    use Cachable;
+
+    protected $table = 'gender';
+    protected $primaryKey = 'id_g';
 
     public function Pendaftar()
     {

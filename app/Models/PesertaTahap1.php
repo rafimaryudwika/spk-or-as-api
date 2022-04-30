@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use GeneaLabs\LaravelModelCaching\Traits\Cachable;
 
 class PesertaTahap1 extends Model
 {
+    use Cachable;
     //
-    protected $table="peserta_t1";
-    protected $primarykey='nim';
+    protected $table = "peserta_t1";
+    protected $primarykey = 'nim';
 
     public function Pendaftar()
     {
@@ -19,10 +21,4 @@ class PesertaTahap1 extends Model
     {
         return $this->hasMany(PenilaianTahap1::class);
     }
-
-    public function JenisTesBakat()
-    {
-        return $this->belongsTo(JenisTesBakatT1::class, 'id_tb');
-    }
-
 }
