@@ -11,9 +11,10 @@ class KriteriaTahap1 extends Model
 
     protected $table = 'kriteria_t1';
     protected $primaryKey = 'id_k1';
+    protected $fillable = ['id_k1', 'kriteria', 'bobot'];
 
-    public function SubKriteria1()
+    public function SubKriteriaTahap1()
     {
-        return $this->hasMany(SubKriteriaTahap1::class);
+        return $this->hasMany(SubKriteriaTahap1::class, 'id_k1');
     }
 }

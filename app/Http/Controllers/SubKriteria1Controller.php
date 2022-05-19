@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\KriteriaTahap1;
@@ -19,33 +20,38 @@ class SubKriteria1Controller extends Controller
      */
     public function index()
     {
-        // //
-
         $kriteria = KriteriaTahap1::get();
-        foreach ($kriteria as $k) {
-            $sub_k['kriteria' . $k->id_k1] = SubKriteriaTahap1::where('id_k1', $k->id_k1)->get('id_sk1');
-            if (count($sub_k['kriteria' . $k->id_k1]) > 1) {
-                $subkriteria1 = SubKriteriaTahap1::with('KriteriaTahap1')->where('id_k1', $k->id_k1);
-                $list['Kriteria'] = $subkriteria1->kriteria;
-                $list['Bobot'] = $subkriteria1->KriteriaTahap1->bobot;
-                $multi_sub = SubKriteriaTahap1::with('KriteriaTahap1')->where('id_k1', $k->id_k1)->get();
-                foreach ($multi_sub as $ms) {
-                    $subk['Sub-Kriteria'] = $subkriteria1->sub_kriteria;
-                    $subk['Bobot'] = $subkriteria1->bobot;
-                }
-                $list['Sub-Kriteria'][] = $subk;
-            } elseif (count($sub_k['kriteria' . $k->id_k1]) == 1) {
-                $subkriteria1 = SubKriteriaTahap1::with('KriteriaTahap1')->where('id_k1', $k->id_k1);
-                $list['Kriteria'] = $subkriteria1->KriteriaTahap1->kriteria;
-                $list['Bobot'] = $subkriteria1->KriteriaTahap1->bobot;
-            }
-            $list;
-        }
-        return $list;
+        $subkriteria = SubKriteriaTahap1::with('KriteriaTahap1')->get();
+        $a = 0;
 
+        foreach ($kriteria as $k) {
+            $data[$a]['id_k1'] = $k->id_k1;
+            $data[$a]['kriteria'] = $k->kriteria;
+            $data[$a]['krit_sc'] = Str::snake($k->kriteria);
+            $data[$a]['bobot'] = $k->bobot;
+            foreach ($subkriteria as $sk) {
+                $count = $sk->where('id_k1', $k->id_k1)->count();
+                if ($count > 1) {
+                    $ssk = $sk->where('id_k1', $k->id_k1);
+                    $nsk = $ssk->get('sub_kriteria')->first();
+                    $subk['id_sk1'] = $ssk->get('id_sk1');
+                    $subk['sub_kriteria'] = $ssk->get('sub_kriteria')->first();
+                    $subk['sk_sc'] = Str::snake($nsk);
+                    $subk['bobot'] = $ssk->get('bobot');
+                    $data[$a]['subkriteria'] = $ssk->get(['id_sk1', 'sub_kriteria', 'bobot']);
+                }
+            }
+            $a++;
+        }
+        // foreach ($subkriteria as $sk) {
+        //     $data[$a]['Kriteria'] = $sk->KriteriaTahap1->kriteria;
+        //     $data[$a]['Subkriteria'] = $sk->sub_kriteria;
+        //     $data[$a]['Bobot'] = $sk->bobot;
+        //     $a++;
+        // }
         $response = [
             'message' => 'Data sub-kriteria tahap 1 OR',
-            'data' => $list
+            'data' => $data
         ];
 
         return response()->json($response, Response::HTTP_OK);
