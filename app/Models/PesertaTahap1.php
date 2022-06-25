@@ -10,7 +10,10 @@ class PesertaTahap1 extends Model
     use Cachable;
     //
     protected $table = "peserta_t1";
-    protected $primarykey = 'nim';
+    protected $primaryKey = 'nim';
+    protected $fillable = ['lulus'];
+    protected $hidden = ['created_at', 'updated_at'];
+    public $timestamps = false;
 
     public function Pendaftar()
     {

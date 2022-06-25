@@ -25,16 +25,16 @@ Route::get('/pendaftar/{nim}', [PendaftarController::class, 'show']);
 
 // Route::get('/kriteria1', [Kriteria1Controller::class, 'index']);
 // Route::get('/subkriteria1', [SubKriteria1Controller::class, 'index']);
-Route::apiResource('/kriteria1', Kriteria1Controller::class)->except([
-    'show'
-]);
-Route::apiResource('/subkriteria1', SubKriteria1Controller::class)->except([
-    'show'
-]);
+Route::apiResource('/kriteria1', Kriteria1Controller::class);
+Route::apiResource('/subkriteria1', SubKriteria1Controller::class);
 
 Route::get('/penilaian1/show/{nim}', 'Penilaian1Controller@show');
 Route::get('/penilaian1/calculate', 'Penilaian1Controller@calculate');
+Route::put('/penilaian1/lulus/{nim}', 'Penilaian1Controller@lulus');
 Route::get('/penilaian1/test', 'Penilaian1Controller@test');
 Route::apiResource('/penilaian1', Penilaian1Controller::class)->except([
+    'show', 'destroy'
+]);
+Route::apiResource('/penilaian2', Penilaian2Controller::class)->except([
     'show', 'destroy'
 ]);

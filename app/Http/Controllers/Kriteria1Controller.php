@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\KriteriaTahap1;
@@ -21,6 +22,7 @@ class Kriteria1Controller extends Controller
         $kriteria = KriteriaTahap1::get([
             'kriteria_t1.id_k1',
             'kriteria_t1.kriteria',
+            'kriteria_t1.k_sc',
             'kriteria_t1.bobot'
         ]);
 
@@ -41,6 +43,7 @@ class Kriteria1Controller extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'kode' => 'required|string',
             'kriteria' => 'required|string',
             'bobot' => 'required|numeric',
         ]);
@@ -74,7 +77,20 @@ class Kriteria1Controller extends Controller
      */
     public function show($id)
     {
-        //
+        $kriteria = KriteriaTahap1::where('id_k1', $id)->get([
+            'kriteria_t1.id_k1',
+            'kriteria_t1.kode',
+            'kriteria_t1.kriteria',
+            'kriteria_t1.k_sc',
+            'kriteria_t1.bobot'
+        ]);
+
+        $response = [
+            'message' => 'Data kriteria tahap 1 OR',
+            'data' => $kriteria
+        ];
+
+        return response()->json($response, Response::HTTP_OK);
     }
 
     /**
@@ -100,8 +116,14 @@ class Kriteria1Controller extends Controller
             );
         }
 
+
         try {
-            $kriteria->update($request->all());
+            $kriteria->update([
+                'kriteria' => $request->kriteria,
+                'k_sc' => Str::snake($request->kriteria),
+                'bobot' => $request->bobot,
+
+            ]);
             $response = [
                 'message' => 'Kriteria created',
                 'data' => $kriteria

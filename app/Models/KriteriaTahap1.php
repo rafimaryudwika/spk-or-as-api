@@ -11,7 +11,7 @@ class KriteriaTahap1 extends Model
 
     protected $table = 'kriteria_t1';
     protected $primaryKey = 'id_k1';
-    protected $fillable = ['id_k1', 'kriteria', 'bobot'];
+    protected $fillable = ['id_k1', 'kriteria', 'k_sc', 'kode', 'bobot'];
 
     public function SubKriteriaTahap1()
     {
