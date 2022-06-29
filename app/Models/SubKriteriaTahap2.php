@@ -17,11 +17,11 @@ class SubKriteriaTahap2 extends Model
 
     public function PenilaianTahap2()
     {
-        return $this->hasMany(PenilaianTahap1::class, 'id_sk2');
+        return $this->hasMany(PenilaianTahap2::class, 'id_sk2');
     }
 
     public function KriteriaTahap2()
     {
-        return $this->belongsTo(KriteriaTahap1::class, 'id_k2');
+        return $this->belongsTo(KriteriaTahap2::class, 'id_k2');
     }
 }

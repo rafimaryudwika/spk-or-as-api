@@ -26,7 +26,9 @@ Route::get('/pendaftar/{nim}', [PendaftarController::class, 'show']);
 // Route::get('/kriteria1', [Kriteria1Controller::class, 'index']);
 // Route::get('/subkriteria1', [SubKriteria1Controller::class, 'index']);
 Route::apiResource('/kriteria1', Kriteria1Controller::class);
+Route::apiResource('/kriteria2', Kriteria2Controller::class);
 Route::apiResource('/subkriteria1', SubKriteria1Controller::class);
+Route::apiResource('/subkriteria2', SubKriteria2Controller::class);
 
 Route::get('/penilaian1/show/{nim}', 'Penilaian1Controller@show');
 Route::get('/penilaian1/calculate', 'Penilaian1Controller@calculate');

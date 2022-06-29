@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Throwable;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -19,7 +20,6 @@ class Kriteria2Controller extends Controller
      */
     public function index()
     {
-        //
         $kriteria = KriteriaTahap2::get([
             'kriteria_t2.id_k2',
             'kriteria_t2.kode',
@@ -46,6 +46,7 @@ class Kriteria2Controller extends Controller
     {
         $validator = Validator::make($request->all(), [
             'kriteria' => 'required|string',
+            'kode' => 'required|string',
             'bobot' => 'required|numeric',
         ]);
 
@@ -57,24 +58,34 @@ class Kriteria2Controller extends Controller
         }
 
         try {
-            $kriteria =  KriteriaTahap2::create($request->all());
+            $num = KriteriaTahap2::orderBy('id_k2', 'desc')->first();
             $a = 1;
-            $latest = KriteriaTahap2::latest()->first()->id_k1;
-            $subk_default = SubKriteriaTahap2::create([
-                'id_k2' => $a . $latest,
+            $kriteria =  KriteriaTahap2::create([
+                'id_k2' => $num->id_k2 + $a,
                 'kriteria' => $request->kriteria,
+                'kode' => $request->kode,
+                'k_sc' => Str::snake($request->kriteria),
+                'bobot' => $request->bobot
+            ]);
+
+            $latest = KriteriaTahap2::latest()->first()->id_k2;
+            $subk_default = SubKriteriaTahap2::create([
+                'id_k2' => $latest,
+                'id_sk2' => $latest . $a,
+                'sub_kriteria' => $request->kriteria,
+                'kode' => $request->kode,
                 'sk_sc' => Str::snake($request->kriteria),
                 'bobot' => $request->bobot
             ]);
             $response = [
                 'message' => 'Kriteria created',
-                'data' => $kriteria
+                'data' => $kriteria . $subk_default
             ];
             return response()->json($response, Response::HTTP_CREATED); //code...
-        } catch (QueryException $e) {
+        } catch (Throwable $e) {
             return response()->json([
-                'message' => "Failed " . $e->errorInfo
-            ]);
+                'message' => "Failed " . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -86,7 +97,20 @@ class Kriteria2Controller extends Controller
      */
     public function show($id)
     {
-        //
+        $kriteria = KriteriaTahap2::where('id_k2', $id)->get([
+            'kriteria_t2.id_k2',
+            'kriteria_t2.kode',
+            'kriteria_t2.kriteria',
+            'kriteria_t2.k_sc',
+            'kriteria_t2.bobot'
+        ]);
+
+        $response = [
+            'message' => 'Data kriteria tahap 2 OR',
+            'data' => $kriteria
+        ];
+
+        return response()->json($response, Response::HTTP_OK);
     }
 
     /**
@@ -98,7 +122,39 @@ class Kriteria2Controller extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $kriteria = KriteriaTahap2::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'kriteria' => 'required|string',
+            'kode' => 'required|string',
+            'bobot' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(
+                $validator->errors(),
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        try {
+            $kriteria->update([
+                'kriteria' => $request->kriteria,
+                'kode' => $request->kode,
+                'k_sc' => Str::snake($request->kriteria),
+                'bobot' => $request->bobot,
+
+            ]);
+            $response = [
+                'message' => 'Kriteria created',
+                'data' => $kriteria
+            ];
+            return response()->json($response, Response::HTTP_OK); //code...
+        } catch (QueryException $e) {
+            return response()->json([
+                'message' => "Failed " . $e->errorInfo
+            ]);
+        }
     }
 
     /**
@@ -109,6 +165,36 @@ class Kriteria2Controller extends Controller
      */
     public function destroy($id)
     {
-        //
+        $kriteria = KriteriaTahap2::findOrFail($id);
+
+        try {
+            $detect = SubKriteriaTahap2::where('id_k2', $id)->count();
+            if ($detect > 1) {
+                $response = [
+                    'message' => 'Kriteria gagal dihapus karena kriteria tersebut sudah dipakai lebih dari 1 sub-kriteria, mohon hapus sub-kriteria terlebih dahulu',
+                ];
+            } else {
+                $detect2 = SubKriteriaTahap2::where('id_k2', $id)->count();
+                if ($detect2 == 1) {
+                    $subkriteria = SubKriteriaTahap2::where('id_k2', $id)->delete();
+                    $kriteria->delete();
+                    $response = [
+                        'message' => 'Kriteria and its subkriteria deleted',
+                        'data' => $subkriteria . ' , ' . $kriteria
+                    ];
+                } else {
+                    $kriteria->delete();
+                    $response = [
+                        'message' => 'Kriteria deleted',
+                        'data' => $kriteria
+                    ];
+                }
+            }
+            return response()->json($response, Response::HTTP_OK); //code...
+        } catch (Throwable $e) {
+            return response()->json([
+                'message' => "Deleting failed: " . $e->getMessage()
+            ]);
+        }
     }
 }

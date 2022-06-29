@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\KriteriaTahap1;
+use App\Models\PenilaianTahap1;
 use App\Models\SubKriteriaTahap1;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -85,16 +86,38 @@ class SubKriteria1Controller extends Controller
         }
 
         try {
-            $subkriteria =  SubKriteriaTahap1::create($request->all());
+            $detect = SubKriteriaTahap1::where('id_k1', '=', $request->id_k1)->orderBy('id_sk1', 'desc')->first();
+            $a = 1;
+            if ($detect == null) {
+                $subkriteria =  SubKriteriaTahap1::create([
+                    'id_sk1' => (int) $request->id_k1 . $a,
+                    'id_k1' => $request->id_k1,
+                    'sub_kriteria' => $request->sub_kriteria,
+                    'kode' => $request->kode,
+                    'sk_sc' => Str::snake($request->sub_kriteria),
+                    'bobot' => $request->bobot
+                ]);
+            } else {
+                $detect2 = SubKriteriaTahap1::where('id_k1', '=', $request->id_k1)->orderBy('id_sk1', 'desc')->first()->id_sk1;
+                $num = $detect2 + $a;
+                $subkriteria =  SubKriteriaTahap1::create([
+                    'id_sk1' => $num,
+                    'id_k1' => $request->id_k1,
+                    'sub_kriteria' => $request->sub_kriteria,
+                    'kode' => $request->kode,
+                    'sk_sc' => Str::snake($request->sub_kriteria),
+                    'bobot' => $request->bobot
+                ]);
+            }
             $response = [
                 'message' => 'Subkriteria created',
                 'data' => $subkriteria
             ];
             return response()->json($response, Response::HTTP_CREATED); //code...
-        } catch (Throwable $e) {
+        } catch (QueryException $e) {
             return response()->json([
                 'message' => "Create failed: " . $e->getMessage()
-            ]);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -136,8 +159,8 @@ class SubKriteria1Controller extends Controller
         $kriteria = SubKriteriaTahap1::where('nim', '=', $id)->firstOrFail();
 
         $validator = Validator::make($request->all(), [
-            'kode' => 'required|string',
             'subkriteria' => 'required|string',
+            'kode' => 'required|string',
             'bobot' => 'required|numeric',
         ]);
 
@@ -150,8 +173,8 @@ class SubKriteria1Controller extends Controller
 
         try {
             $kriteria->update([
-                'kode' => $request->kode,
                 'kriteria' => $request->subkriteria,
+                'kode' => $request->kode,
                 'sk_sc' => Str::snake($request->subkriteria),
                 'bobot' => $request->bobot,
 
@@ -179,11 +202,19 @@ class SubKriteria1Controller extends Controller
         $kriteria = SubKriteriaTahap1::findOrFail($id);
 
         try {
-            $kriteria->delete();
-            $response = [
-                'message' => 'Subkriteria deleted',
-                'data' => $kriteria
-            ];
+            $detect = PenilaianTahap1::where('id_sk1', '=', $id)->count();
+            if ($detect >= 1) {
+                $response = [
+                    'message' => 'Subkriteria tidak bisa dihapus karena sedang proses penilaian'
+                ];
+            } else if ($detect == 0) {
+                $kriteria->delete();
+                $response = [
+                    'message' => 'Subkriteria deleted',
+                    'data' => $kriteria
+                ];
+            }
+
             return response()->json($response, Response::HTTP_OK); //code...
         } catch (Throwable $e) {
             return response()->json([
