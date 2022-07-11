@@ -3,14 +3,13 @@
 namespace App\Http\Controllers;
 
 use Throwable;
-use App\Models\Pendaftar;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\PesertaTahap1;
 use App\Models\KriteriaTahap1;
 use App\Models\PenilaianTahap1;
 use App\Models\SubKriteriaTahap1;
-use Illuminate\Database\QueryException;
+use App\Models\Pendaftar;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -29,9 +28,9 @@ class Penilaian1Controller extends Controller
             'Pendaftar.Fakultas.BidangFakultas'
         ])->get();
         $f = 0;
-        foreach ($peserta1 as $p) {
-            $peserta[$f]['nim'] = $p->Pendaftar->nim;
-            $peserta[$f]['nama'] = $p->Pendaftar->nama;
+        foreach ($peserta1 as $i => $p) {
+            $peserta[$i]['nim'] = $p->Pendaftar->nim;
+            $peserta[$i]['nama'] = $p->Pendaftar->nama;
             $data_p['nama_panggilan'] = $p->Pendaftar->panggilan;
             $data_p['e_mail'] = $p->Pendaftar->email;
             $data_p['nomor_hp'] = $p->Pendaftar->no_hp;
@@ -42,33 +41,36 @@ class Penilaian1Controller extends Controller
             $data_p['jurusan'] = $p->Pendaftar->Jurusan->jurusan;
             $data_p['bidang_fakultas'] = $p->Pendaftar->Fakultas->BidangFakultas->bidang_fak;
             $data_p['alamat_di_padang'] = $p->Pendaftar->alamat_pdg;
-            $peserta[$f]['detail'] = $data_p;
-            foreach ($nm as $v) {
-                if ($p->nim != $v->nim) {
-                    $peserta[$f]['nilai'] = 'nodata';
-                } else {
-                    foreach ($kriteria as $k) {
-                        $match = ['nim' => $v->nim, 'id_k1' => $k->id_k1];
-                        $sub_k['kriteria_' . $k->id_k1] = SubKriteriaTahap1::where('id_k1', $k->id_k1)->get('id_sk1');
-                        if (count($sub_k['kriteria_' . $k->id_k1]) > 1) { // jika sub-kriteria dalam kriteria lebih dari 1
-                            $multi_sub = SubKriteriaTahap1::with('KriteriaTahap1')->where('id_k1', $k->id_k1)->get();
-                            foreach ($multi_sub as $jsk) {
-                                $match2 = ['nim' => $v->nim, 'id_k1' => $k->id_k1, 'sub_kriteria_t1.id_sk1' => $jsk->id_sk1];
-                                $m_sub[Str::snake($jsk->sub_kriteria)] =  PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
-                                    ->where($match2)->pluck('nilai')->first();
-                                $nilaii[Str::snake($k->kriteria)] = $m_sub;
+            $peserta[$i]['detail'] = $data_p;
+            if (count($nm) === 0) {
+                $peserta[$i]['nilai'] = 'nodata';
+            } else {
+                foreach ($nm as $v) {
+                    if ($p->nim != $v->nim) {
+                        $peserta[$i]['nilai'] = 'nodata';
+                    } else {
+                        foreach ($kriteria as $k) {
+                            $match = ['nim' => $v->nim, 'id_k1' => $k->id_k1];
+                            $sub_k['kriteria_' . $k->id_k1] = SubKriteriaTahap1::where('id_k1', $k->id_k1)->get('id_sk1');
+                            if (count($sub_k['kriteria_' . $k->id_k1]) > 1) { // jika sub-kriteria dalam kriteria lebih dari 1
+                                $multi_sub = SubKriteriaTahap1::with('KriteriaTahap1')->where('id_k1', $k->id_k1)->get();
+                                foreach ($multi_sub as $jsk) {
+                                    $match2 = ['nim' => $v->nim, 'id_k1' => $k->id_k1, 'sub_kriteria_t1.id_sk1' => $jsk->id_sk1];
+                                    $m_sub[Str::snake($jsk->sub_kriteria)] =  PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
+                                        ->where($match2)->pluck('nilai')->first();
+                                    $nilaii[Str::snake($k->kriteria)] = $m_sub;
+                                }
+                            } elseif (count($sub_k['kriteria_' . $k->id_k1]) == 1) {
+                                $nilaii[Str::snake($k->kriteria)] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
+                                    ->where($match)->select('nilai')->first()->nilai;
                             }
-                        } elseif (count($sub_k['kriteria_' . $k->id_k1]) == 1) {
-                            $nilaii[Str::snake($k->kriteria)] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
-                                ->where($match)->select('nilai')->first()->nilai;
                         }
+                        $peserta[$i]['nilai'] = $nilaii;
+                        $peserta[$i]['lulus'] = $p->lulus;
+                        break;
                     }
-                    $peserta[$f]['nilai'] = $nilaii;
-                    $peserta[$f]['lulus'] = $p->lulus;
-                    break;
                 }
             }
-            $f++;
         }
 
         $response = [
@@ -89,6 +91,26 @@ class Penilaian1Controller extends Controller
         foreach ($nm as $v) {
             $krittt[$e]['nim'] = $v->nim;
             $krittt[$e]['nama'] = $v->nama;
+            $peserta1 = PesertaTahap1::with([
+                'Pendaftar',
+                'Pendaftar.Gender',
+                'Pendaftar.Fakultas',
+                'Pendaftar.Jurusan',
+                'Pendaftar.Fakultas.BidangFakultas'
+            ])->where('nim', $v->nim)->get();
+            foreach ($peserta1 as $p) {
+                $data_p['nama_panggilan'] = $p->Pendaftar->panggilan;
+                $data_p['e_mail'] = $p->Pendaftar->email;
+                $data_p['nomor_hp'] = $p->Pendaftar->no_hp;
+                $data_p['gender'] = $p->Pendaftar->Gender->gender;
+                $data_p['tempat_lahir'] = $p->Pendaftar->tempat_lahir;
+                $data_p['tanggal_lahir'] = $p->Pendaftar->tgl_lahir;
+                $data_p['fakultas'] = $p->Pendaftar->Fakultas->fakultas;
+                $data_p['jurusan'] = $p->Pendaftar->Jurusan->jurusan;
+                $data_p['bidang_fakultas'] = $p->Pendaftar->Fakultas->BidangFakultas->bidang_fak;
+                $data_p['alamat_di_padang'] = $p->Pendaftar->alamat_pdg;
+            }
+            $krittt[$e]['detail'] = $data_p;
             foreach ($kriteria as $nk => $k) {
                 $match = ['nim' => $v->nim, 'id_k1' => $k];
                 $sub_k['kriteria_' . $k] = SubKriteriaTahap1::where('id_k1', $k)->get('id_sk1');
@@ -138,6 +160,7 @@ class Penilaian1Controller extends Controller
         foreach ($krittt as $krtt) {
             $data[$f]['nim'] = collect($krtt)->get('nim');
             $data[$f]['nama'] = collect($krtt)->get('nama');
+            $data[$f]['detail'] = collect($krtt)->get('detail');
             $data[$f]['nilai'] = collect($krtt)->get('nilai');
             $data[$f]['normalisasi'] = collect($krtt)->get('normalisasi');
             foreach ($kriteria as $nk => $k) {
@@ -157,13 +180,13 @@ class Penilaian1Controller extends Controller
             $f++;
         }
 
-
         $response = [
             'message' => 'Tabel kalkulasi penilaian OR tahap 1',
             'data' => $data
         ];
         return response()->json($response, Response::HTTP_OK);
     }
+
     public function import()
     {
         $read = Pendaftar::where('daftar_ulang', '=', '1')->get();
@@ -171,14 +194,26 @@ class Penilaian1Controller extends Controller
             $new[$i]['nim'] = $r->nim;
             $new[$i]['lulus'] = 0;
         }
-        try {
-            $insert = PesertaTahap1::insert($new);
-            $response = [
-                'message' => 'Import peserta dari pendaftaran berhasil',
-                'data' => $insert
-            ];
-            return response()->json($response, Response::HTTP_OK); //code...
+        $exist = PesertaTahap1::get();
+        $exist = $exist->pluck('nim');
+        $filter = collect($new)->reject(function ($value) use ($exist) {
+            return $exist->contains($value['nim']);
+        });
+        $filterArray = $filter->toArray();
 
+        try {
+            if ($filterArray == null) {
+                $response = [
+                    'message' => 'Tidak ada data yg diimport'
+                ];
+            } else {
+                $insert = PesertaTahap1::insert($filterArray);
+                $response = [
+                    'message' => 'Import peserta dari pendaftar berhasil',
+                    'data' => $insert
+                ];
+            }
+            return response()->json($response, Response::HTTP_OK);
         } catch (Throwable $e) {
             return response()->json([
                 'message' => "Import gagal: " . $e->getMessage()
@@ -186,14 +221,9 @@ class Penilaian1Controller extends Controller
         }
     }
 
-    public function test()
-    {
-    }
-
     public function lulus(Request $request, $id)
     {
         $lulus = PesertaTahap1::where('nim', $id)->firstOrFail();
-
         $validator = Validator::make($request->all(), [
             'lulus' => 'required|numeric'
         ]);
@@ -212,7 +242,6 @@ class Penilaian1Controller extends Controller
                 'data' => $lulus
             ];
             return response()->json($response, Response::HTTP_OK); //code...
-
         } catch (Throwable $e) {
             return response()->json([
                 'message' => "Update kelulusan failed: " . $e->getMessage()
@@ -263,10 +292,10 @@ class Penilaian1Controller extends Controller
                 'data' => $penilaian1
             ];
             return response()->json($response, Response::HTTP_CREATED); //code...
-        } catch (QueryException $e) {
+        } catch (Throwable $e) {
             return response()->json([
-                'message' => "Failed " . $e->errorInfo
-            ]);
+                'message' => "Create failed: " . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -317,10 +346,10 @@ class Penilaian1Controller extends Controller
             ];
 
             return response()->json($response, Response::HTTP_OK); //code...
-        } catch (QueryException $e) {
+        } catch (Throwable $e) {
             return response()->json([
-                'message' => "Failed " . $e->errorInfo
-            ]);
+                'message' => "Update failed " . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

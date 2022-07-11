@@ -11,6 +11,9 @@ class PesertaTahap2 extends Model
     //
     protected $table = "peserta_t2";
     protected $primarykey = 'nim';
+    protected $fillable = ['nim', 'lulus'];
+    protected $hidden = ['created_at', 'updated_at'];
+    public $timestamps = false;
 
     public function PesertaTahap1()
     {

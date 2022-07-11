@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
-
+Route::get('/fakultas', 'FakultasController@index');
 Route::get('/pendaftar', [PendaftarController::class, 'index']);
 Route::post('/pendaftar', [PendaftarController::class, 'store']);
 Route::get('/pendaftar/{nim}', [PendaftarController::class, 'show']);
