@@ -24,4 +24,9 @@ class PesertaTahap1 extends Model
     {
         return $this->hasMany(PenilaianTahap1::class);
     }
+
+    public function InfoPesertaT1()
+    {
+        return $this->hasMany(InfoPesertaT1::class);
+    }
 }

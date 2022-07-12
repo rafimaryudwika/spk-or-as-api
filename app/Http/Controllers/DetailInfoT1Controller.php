@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use Throwable;
+use Illuminate\Support\Str;
 use App\Models\DetailInfoT1;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Validator;
 
 class DetailInfoT1Controller extends Controller
 {
@@ -45,9 +46,20 @@ class DetailInfoT1Controller extends Controller
             );
         }
         try {
-            $info =  DetailInfoT1::create($request->all());
+            $num = DetailInfoT1::orderBy('tipe_info1', 'desc')->first();
+            $a = 1;
+            if ($num == null) {
+                $b = $a;
+            } else {
+                $b = $num->tipe_info1 + $a;
+            }
+            $info =  DetailInfoT1::create([
+                'tipe_info1' => $b,
+                'nama_info' => $request->nama_info,
+                'info_sc' => Str::snake($request->nama_info)
+            ]);
             $response = [
-                'message' => 'Kriteria created',
+                'message' => 'Info peserta created',
                 'data' => $info
             ];
             return response()->json($response, Response::HTTP_CREATED); //code...
@@ -95,10 +107,11 @@ class DetailInfoT1Controller extends Controller
 
         try {
             $update = DetailInfoT1::findOrFail($id)->update([
-                'nama_info' => $request->nama_info
+                'nama_info' => $request->nama_info,
+                'info_sc' => Str::snake($request->nama_info)
             ]);
             $response = [
-                'message' => 'Kriteria created',
+                'message' => 'Info peserta edited',
                 'data' => $update
             ];
             return response()->json($response, Response::HTTP_OK); //code...
@@ -120,7 +133,7 @@ class DetailInfoT1Controller extends Controller
         try {
             $delete = DetailInfoT1::findOrFail($id)->delete();
             $response = [
-                'message' => 'Kriteria created',
+                'message' => 'Info peserta deleted',
                 'data' => $delete
             ];
             return response()->json($response, Response::HTTP_OK); //code...
