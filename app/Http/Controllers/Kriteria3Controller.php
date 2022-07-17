@@ -55,8 +55,13 @@ class Kriteria3Controller extends Controller
         try {
             $num = KriteriaTahap3::orderBy('id_k3', 'desc')->first();
             $a = 1;
+            if ($num == null) {
+                $b = $a;
+            } else {
+                $b = $num->tipe_info1 + $a;
+            }
             $kriteria =  KriteriaTahap3::create([
-                'id_k3' => $num->id_k3 + $a,
+                'id_k3' => $b,
                 'kriteria' => $request->kriteria,
                 'kode' => $request->kode,
                 'k_sc' => Str::snake($request->kriteria),
@@ -189,7 +194,7 @@ class Kriteria3Controller extends Controller
         } catch (Throwable $e) {
             return response()->json([
                 'message' => "Deleting failed: " . $e->getMessage()
-            ]);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

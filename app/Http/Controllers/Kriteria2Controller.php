@@ -45,8 +45,8 @@ class Kriteria2Controller extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'kriteria' => 'required|string',
             'kode' => 'required|string',
+            'kriteria' => 'required|string',
             'bobot' => 'required|numeric',
         ]);
 
@@ -60,8 +60,13 @@ class Kriteria2Controller extends Controller
         try {
             $num = KriteriaTahap2::orderBy('id_k2', 'desc')->first();
             $a = 1;
+            if ($num == null) {
+                $b = $a;
+            } else {
+                $b = $num->tipe_info1 + $a;
+            }
             $kriteria =  KriteriaTahap2::create([
-                'id_k2' => $num->id_k2 + $a,
+                'id_k2' => $b,
                 'kriteria' => $request->kriteria,
                 'kode' => $request->kode,
                 'k_sc' => Str::snake($request->kriteria),
@@ -150,10 +155,10 @@ class Kriteria2Controller extends Controller
                 'data' => $kriteria
             ];
             return response()->json($response, Response::HTTP_OK); //code...
-        } catch (QueryException $e) {
+        } catch (Throwable $e) {
             return response()->json([
-                'message' => "Failed " . $e->errorInfo
-            ]);
+                'message' => "Failed " . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -194,7 +199,7 @@ class Kriteria2Controller extends Controller
         } catch (Throwable $e) {
             return response()->json([
                 'message' => "Deleting failed: " . $e->getMessage()
-            ]);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -114,7 +114,7 @@ class SubKriteria2Controller extends Controller
                 'data' => $subkriteria
             ];
             return response()->json($response, Response::HTTP_CREATED); //code...
-        } catch (QueryException $e) {
+        } catch (Throwable $e) {
             return response()->json([
                 'message' => "Create failed: " . $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -173,9 +173,9 @@ class SubKriteria2Controller extends Controller
 
         try {
             $kriteria->update([
-                'sub_kriteria' => $request->subkriteria,
+                'sub_kriteria' => $request->sub_kriteria,
                 'kode' => $request->kode,
-                'sk_sc' => Str::snake($request->subkriteria),
+                'sk_sc' => Str::snake($request->sub_kriteria),
                 'bobot' => $request->bobot,
 
             ]);
@@ -187,7 +187,7 @@ class SubKriteria2Controller extends Controller
         } catch (Throwable $e) {
             return response()->json([
                 'message' => "Update failed: " . $e->getMessage()
-            ]);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

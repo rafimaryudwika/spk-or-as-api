@@ -10,18 +10,18 @@ class SubKriteriaTahap3 extends Model
     use Cachable;
 
     //
-    protected $table = 'sub_kriteria_t2';
-    protected $primaryKey = 'id_sk2';
-    protected $fillable = ['id_k2', 'id_sk2', 'sub_kriteria', 'sk_sc', 'kode', 'bobot'];
+    protected $table = 'sub_kriteria_t3';
+    protected $primaryKey = 'id_sk3';
+    protected $fillable = ['id_k3', 'id_sk3', 'sub_kriteria', 'sk_sc', 'kode', 'bobot'];
 
 
-    public function PenilaianTahap2()
+    public function PenilaianTahap3()
     {
-        return $this->hasMany(PenilaianTahap1::class, 'id_sk2');
+        return $this->hasMany(PenilaianTahap3::class, 'id_sk3');
     }
 
-    public function KriteriaTahap2()
+    public function KriteriaTahap3()
     {
-        return $this->belongsTo(KriteriaTahap1::class, 'id_k2');
+        return $this->belongsTo(KriteriaTahap3::class, 'id_k3');
     }
 }

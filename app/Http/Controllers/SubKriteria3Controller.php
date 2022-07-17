@@ -173,9 +173,9 @@ class SubKriteria3Controller extends Controller
 
         try {
             $kriteria->update([
-                'sub_kriteria' => $request->subkriteria,
+                'sub_kriteria' => $request->sub_kriteria,
                 'kode' => $request->kode,
-                'sk_sc' => Str::snake($request->subkriteria),
+                'sk_sc' => Str::snake($request->sub_kriteria),
                 'bobot' => $request->bobot,
 
             ]);

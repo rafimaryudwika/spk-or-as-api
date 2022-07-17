@@ -4,14 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use GeneaLabs\LaravelModelCaching\Traits\Cachable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class PesertaTahap3 extends Model
 {
     use Cachable;
     //
     protected $table = "peserta_t3";
-    protected $primarykey = 'nim';
+    protected $primaryKey = 'nim';
     protected $fillable = ['nim', 'lulus'];
     protected $hidden = ['created_at', 'updated_at'];
     public $timestamps = false;

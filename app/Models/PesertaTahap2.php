@@ -10,7 +10,7 @@ class PesertaTahap2 extends Model
     use Cachable;
     //
     protected $table = "peserta_t2";
-    protected $primarykey = 'nim';
+    protected $primaryKey = 'nim';
     protected $fillable = ['nim', 'lulus'];
     protected $hidden = ['created_at', 'updated_at'];
     public $timestamps = false;

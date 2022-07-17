@@ -20,9 +20,9 @@ class Kriteria1Controller extends Controller
      */
     public function index()
     {
-        //
         $kriteria = KriteriaTahap1::get([
             'kriteria_t1.id_k1',
+            'kriteria_t1.kode',
             'kriteria_t1.kriteria',
             'kriteria_t1.k_sc',
             'kriteria_t1.bobot'
@@ -60,8 +60,13 @@ class Kriteria1Controller extends Controller
         try {
             $num = KriteriaTahap1::orderBy('id_k1', 'desc')->first();
             $a = 1;
+            if ($num == null) {
+                $b = $a;
+            } else {
+                $b = $num->tipe_info1 + $a;
+            }
             $kriteria =  KriteriaTahap1::create([
-                'id_k1' => $num->id_k1 + $a,
+                'id_k1' => $b,
                 'kriteria' => $request->kriteria,
                 'kode' => $request->kode,
                 'k_sc' => Str::snake($request->kriteria),
@@ -150,10 +155,10 @@ class Kriteria1Controller extends Controller
                 'data' => $kriteria
             ];
             return response()->json($response, Response::HTTP_OK); //code...
-        } catch (QueryException $e) {
+        } catch (Throwable $e) {
             return response()->json([
-                'message' => "Failed " . $e->errorInfo
-            ]);
+                'message' => "Failed " . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -194,7 +199,7 @@ class Kriteria1Controller extends Controller
         } catch (Throwable $e) {
             return response()->json([
                 'message' => "Deleting failed: " . $e->getMessage()
-            ]);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

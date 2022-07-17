@@ -73,8 +73,8 @@ class SubKriteria1Controller extends Controller
     {
         $validator = Validator::make($request->all(), [
             'id_k1' => 'required|numeric',
-            'kode' => 'required|string',
             'sub_kriteria' => 'required|string',
+            'kode' => 'required|string',
             'bobot' => 'required|numeric',
         ]);
 
@@ -187,7 +187,7 @@ class SubKriteria1Controller extends Controller
         } catch (Throwable $e) {
             return response()->json([
                 'message' => "Update failed: " . $e->getMessage()
-            ]);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

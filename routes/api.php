@@ -50,3 +50,11 @@ Route::post('/penilaian2/import', 'Penilaian2Controller@import');
 Route::apiResource('/penilaian2', Penilaian2Controller::class)->except([
     'show', 'destroy'
 ]);
+Route::get('/penilaian3/show/{nim}', 'Penilaian3Controller@show');
+Route::get('/penilaian3/show2/{nim}', 'Penilaian3Controller@show2');
+Route::get('/penilaian3/calculate', 'Penilaian3Controller@calculate');
+Route::put('/penilaian3/lulus/{nim}', 'Penilaian3Controller@lulus');
+Route::post('/penilaian3/import', 'Penilaian3Controller@import');
+Route::apiResource('/penilaian3', Penilaian3Controller::class)->except([
+    'show', 'destroy'
+]);

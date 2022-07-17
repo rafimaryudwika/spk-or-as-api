@@ -422,7 +422,11 @@ class Penilaian1Controller extends Controller
                 if (count($sub_k['kriteria_' . $k]) > 1) { // jika sub-kriteria dalam kriteria lebih dari 1
                     $skr[$nk] = number_format(collect(collect(collect($krtt)->get('total'))->get($nk))->get('total'), 2);
                     $skr_max[$nk] = (collect(collect($testin)->get($nk))->max());
-                    $norms[$nk] = number_format((collect($skr)->get($nk) / collect($skr_max)->get($nk)) * collect($n_bobot)->get($nk), 2);
+                    if (collect($skr_max)->get($nk) == 0) {
+                        $norms[$nk] = number_format((collect($skr)->get($nk)) * collect($n_bobot)->get($nk), 2);
+                    } else {
+                        $norms[$nk] = number_format((collect($skr)->get($nk) / collect($skr_max)->get($nk)) * collect($n_bobot)->get($nk), 2);
+                    }
                 } elseif (count($sub_k['kriteria_' . $k]) == 1) {
                     $norms[$nk] = collect(collect($krtt)->get('total'))->get($nk);
                 }
