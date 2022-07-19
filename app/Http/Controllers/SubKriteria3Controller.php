@@ -75,7 +75,7 @@ class SubKriteria3Controller extends Controller
             'id_k3' => 'required|numeric',
             'sub_kriteria' => 'required|string',
             'kode' => 'required|string',
-            'bobot' => 'required|numeric',
+            'bobot' => 'required|numeric|not_in:0|regex:/^[1-9][0-9]+/',
         ]);
 
         if ($validator->fails()) {
@@ -161,7 +161,7 @@ class SubKriteria3Controller extends Controller
         $validator = Validator::make($request->all(), [
             'sub_kriteria' => 'required|string',
             'kode' => 'required|string',
-            'bobot' => 'required|numeric',
+            'bobot' => 'required|numeric|not_in:0|regex:/^[1-9][0-9]+/',
         ]);
 
         if ($validator->fails()) {

@@ -245,10 +245,10 @@ class Penilaian3Controller extends Controller
             $valid['nim'] = ['required'];
             foreach ($multi_sub as $sk) {
                 if (count($sub_k['kriteria_' . $k->id_k3]) > 1) {
-                    $valid[$k->k_sc . '-' . $sk->sk_sc] = ['required', 'numeric'];
+                    $valid[$k->k_sc . '-' . $sk->sk_sc] = 'required|numeric|min:0';
                     $nilai_sk[] = $k->k_sc . '-' . $sk->sk_sc;
                 } elseif (count($sub_k['kriteria_' . $k->id_k3]) == 1) {
-                    $valid[$k->k_sc] = ['required', 'numeric'];
+                    $valid[$k->k_sc] = 'required|numeric|min:0';
                     $nilai_sk[] = $k->k_sc;
                 }
             }
@@ -294,10 +294,10 @@ class Penilaian3Controller extends Controller
                 ->where('kriteria_t3.id_k3', $k)->pluck('sub_kriteria_t3.id_sk3', 'sub_kriteria_t3.sk_sc');
             foreach ($multi_sub as $sk => $nsk) {
                 if (count($sub_k['kriteria_' . $k]) > 1) {
-                    $arr[$nk . '-' . $sk] = ['required', 'numeric'];
+                    $arr[$nk . '-' . $sk] = 'required|numeric|min:0';
                     $nilai_sk[] = $nk . '-' . $sk;
                 } elseif (count($sub_k['kriteria_' . $k]) == 1) {
-                    $arr[$nk] = ['required', 'numeric'];
+                    $arr[$nk] = 'required|numeric|min:0';
                     $nilai_sk[] = $nk;
                 }
             }
