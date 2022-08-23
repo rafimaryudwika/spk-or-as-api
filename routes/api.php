@@ -45,6 +45,7 @@ Route::apiResource('/penilaian1', Penilaian1Controller::class)->except([
 Route::get('/penilaian2/show/{nim}', 'Penilaian2Controller@show');
 Route::get('/penilaian2/show2/{nim}', 'Penilaian2Controller@show2');
 Route::get('/penilaian2/calculate', 'Penilaian2Controller@calculate');
+Route::get('/penilaian2/test', 'Penilaian2Controller@test');
 Route::put('/penilaian2/lulus/{nim}', 'Penilaian2Controller@lulus');
 Route::post('/penilaian2/import', 'Penilaian2Controller@import');
 Route::apiResource('/penilaian2', Penilaian2Controller::class)->except([

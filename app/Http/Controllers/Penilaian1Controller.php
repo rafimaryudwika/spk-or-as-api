@@ -128,9 +128,11 @@ class Penilaian1Controller extends Controller
                         $ms_bobot[$jsk] = SubKriteriaTahap1::join('kriteria_t1', 'sub_kriteria_t1.id_k1', '=', 'kriteria_t1.id_k1')
                             ->where(['kriteria_t1.id_k1' => $k, 'sub_kriteria_t1.id_sk1' => $ns])->pluck('sub_kriteria_t1.bobot')->first();
                         $nilaii[$nk] = $m_sub;
-                        $ms_norm[$jsk] = number_format(collect($m_sub)->get($jsk) / collect($ms_max)->get($jsk), 2);
-                        $ms_calc[$jsk] = number_format(collect($ms_norm)->get($jsk) * collect($ms_bobot)->get($jsk), 2);
-                        $ms_total['total'] = number_format(collect($ms_calc)->sum(), 2);
+                        $ms_norm[$jsk] = number_format(collect($m_sub)->get($jsk) / collect($ms_max)->get($jsk), 3);
+
+                        $ms_calc[$jsk] = collect($ms_norm)->get($jsk) * collect($ms_bobot)->get($jsk);
+                        $ms_norm['total'] = number_format(collect($ms_calc)->sum(), 3);
+                        $ms_total['total'] = collect($ms_calc)->sum();
                         $normz[$nk] = $ms_norm;
                         $calc[$nk] = $ms_total;
                     }
@@ -142,9 +144,9 @@ class Penilaian1Controller extends Controller
                         ->where($match)->select('nilai')->first()->nilai;
                     $n_max[$nk] = PenilaianTahap1::join('sub_kriteria_t1', 'nilai_t1.id_sk1', '=', 'sub_kriteria_t1.id_sk1')
                         ->where(['id_k1' => $k])->select('nilai')->max('nilai');
-                    $n_norm = number_format(collect($nilaii)->get($nk) / collect($n_max)->get($nk), 2);
-                    $n_norm2[$nk] = number_format(collect($nilaii)->get($nk) / collect($n_max)->get($nk), 2); // untuk variabel kalkulasi nilai, menghindari array dalam array
-                    $n_calc = number_format(collect($n_norm2)->get($nk) * collect($n_bobot)->get($nk), 2);
+                    $n_norm = number_format(collect($nilaii)->get($nk) / collect($n_max)->get($nk), 3);
+                    $n_norm2[$nk] = number_format(collect($nilaii)->get($nk) / collect($n_max)->get($nk), 3); // untuk variabel kalkulasi nilai, menghindari array dalam array
+                    $n_calc = number_format(collect($n_norm2)->get($nk) * collect($n_bobot)->get($nk), 3);
                     $normz[$nk] = $n_norm;
                     $calc[$nk] = $n_calc;
                 }
@@ -168,14 +170,17 @@ class Penilaian1Controller extends Controller
                 $n_bobot[$nk] = SubKriteriaTahap1::join('kriteria_t1', 'sub_kriteria_t1.id_k1', '=', 'kriteria_t1.id_k1')
                     ->where(['kriteria_t1.id_k1' => $k])->pluck('kriteria_t1.bobot')->first();
                 if (count($sub_k['kriteria_' . $k]) > 1) { // jika sub-kriteria dalam kriteria lebih dari 1
-                    $skr[$nk] = number_format(collect(collect(collect($krtt)->get('total'))->get($nk))->get('total'), 2);
+                    $skr[$nk] = collect(collect(collect($krtt)->get('total'))->get($nk))->get('total');
                     $skr_max[$nk] = (collect(collect($testin)->get($nk))->max());
-                    $norms[$nk] = number_format((collect($skr)->get($nk) / collect($skr_max)->get($nk)) * collect($n_bobot)->get($nk), 2);
+                    $nnn[$nk] = number_format((collect($skr)->get($nk) / collect($skr_max)->get($nk)), 3);
+                    $norms[$nk] = (collect($skr)->get($nk) / collect($skr_max)->get($nk)) * collect($n_bobot)->get($nk);
                 } elseif (count($sub_k['kriteria_' . $k]) == 1) {
+                    $nnn[$nk] = collect(collect($krtt)->get('normalisasi'))->get($nk);
                     $norms[$nk] = collect(collect($krtt)->get('total'))->get($nk);
                 }
             }
-            $data[$f]['total'] = number_format(collect($norms)->sum(), 2);
+            $data[$f]['new_norm'] = collect($nnn);
+            $data[$f]['total'] = number_format(collect($norms)->sum(), 3);
             $data[$f]['lulus'] = collect($krtt)->get('lulus');
             $f++;
         }
@@ -185,6 +190,49 @@ class Penilaian1Controller extends Controller
             'data' => $data
         ];
         return response()->json($response, Response::HTTP_OK);
+    }
+
+    public function test()
+    {
+        $kriteria = KriteriaTahap1::query()->with(['SubKriteriaTahap1'])
+            ->get();
+        $pendaftar = Pendaftar::query()
+            ->with('PenilaianTahap1.SubKriteriaTahap1.KriteriaTahap1')
+            ->whereHas('PesertaTahap1')
+            ->get();
+        $nilai = $pendaftar->map(function ($query) {
+            $query->nilai = $query->PenilaianTahap1
+                ->groupBy(['SubKriteriaTahap1.KriteriaTahap1.id_k1'])
+                ->map(function ($query) {
+                    return $query->mapWithKeys(function ($sub) {
+                        return  [$sub->SubKriteriaTahap1->id_sk1 => $sub->nilai];
+                    });
+                });
+            return $query->only('nim', 'nama', 'nilai');
+        });
+
+        $neww = $kriteria->map(function ($query) {
+            $name = $query->k_sc;
+            $query->{$name} = $query->bobot;
+            if (count($query->SubKriteriaTahap1) > 1) {
+                $query->sub_kriteria = $query->SubKriteriaTahap1
+                    ->groupBy(['SubKriteriaTahap1.sk_sc'])->map(function ($query) {
+                        return $query->mapWithKeys(function ($sub) {
+                            return [$sub->sk_sc => $sub->bobot];
+                        });
+                    });
+            }
+            return $query->only($query->k_sc, 'sub_kriteria');
+        });
+        $newMapping = $neww->map(function ($query) {
+            $obj = $query;
+            if (empty($query['sub_kriteria'])) {
+                unset($obj['sub_kriteria']);
+            }
+            return $obj;
+        });
+
+        return $nilai;
     }
 
     public function import()

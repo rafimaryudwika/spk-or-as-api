@@ -15,9 +15,13 @@ class PesertaTahap2 extends Model
     protected $hidden = ['created_at', 'updated_at'];
     public $timestamps = false;
 
-    public function PesertaTahap1()
+    public function PesertaTahap1() //prev
     {
         return $this->belongsTo(PesertaTahap1::class, 'nim');
+    }
+    public function PesertaTahap3() //next
+    {
+        return $this->hasOne(PenilaianTahap1::class, 'nim');
     }
 
     public function PenilaianTahap2()

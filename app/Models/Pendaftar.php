@@ -30,6 +30,19 @@ class Pendaftar extends Model
 
     public function PesertaTahap1()
     {
-        return $this->hasMany(PesertaTahap1::class);
+        return $this->hasOne(PesertaTahap1::class, 'nim');
+    }
+    public function PesertaTahap2()
+    {
+        return $this->hasOne(PesertaTahap2::class, 'nim');
+    }
+
+    public function PenilaianTahap2()
+    {
+        return $this->hasMany(PenilaianTahap2::class, 'nim', 'nim');
+    }
+    public function PenilaianTahap1()
+    {
+        return $this->hasMany(PenilaianTahap1::class, 'nim', 'nim');
     }
 }

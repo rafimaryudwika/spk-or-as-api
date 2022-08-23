@@ -24,6 +24,10 @@ class PesertaTahap1 extends Model
     {
         return $this->hasMany(PenilaianTahap1::class);
     }
+    public function PesertaTahap2()
+    {
+        return $this->hasOne(PenilaianTahap1::class, 'nim');
+    }
 
     public function InfoPesertaT1()
     {

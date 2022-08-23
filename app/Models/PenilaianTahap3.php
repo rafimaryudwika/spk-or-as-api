@@ -19,11 +19,11 @@ class PenilaianTahap3 extends Model
 
     public function PesertaTahap3()
     {
-        return $this->belongsTo(PesertaTahap1::class, 'nim', 'nim');
+        return $this->belongsTo(PesertaTahap3::class, 'nim', 'nim');
     }
 
     public function SubKriteriaTahap3()
     {
-        return $this->belongsTo(SubKriteriaTahap1::class, 'id_sk3', 'id_sk3');
+        return $this->belongsTo(SubKriteriaTahap3::class, 'id_sk3', 'id_sk3');
     }
 }

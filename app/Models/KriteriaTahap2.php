@@ -17,4 +17,9 @@ class KriteriaTahap2 extends Model
     {
         return $this->hasMany(SubKriteriaTahap2::class, 'id_k2');
     }
+
+    public function PenilaianTahap2()
+    {
+        return $this->hasManyThrough(PenilaianTahap2::class, SubKriteriaTahap2::class, 'id_k2', 'id_sk2');
+    }
 }

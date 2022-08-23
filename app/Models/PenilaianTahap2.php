@@ -18,11 +18,11 @@ class PenilaianTahap2 extends Model
 
     public function PesertaTahap2()
     {
-        return $this->belongsTo(PesertaTahap1::class, 'nim', 'nim');
+        return $this->belongsTo(PesertaTahap2::class, 'nim', 'nim');
     }
 
     public function SubKriteriaTahap2()
     {
-        return $this->belongsTo(SubKriteriaTahap1::class, 'id_sk2', 'id_sk2');
+        return $this->belongsTo(SubKriteriaTahap2::class, 'id_sk2', 'id_sk2');
     }
 }

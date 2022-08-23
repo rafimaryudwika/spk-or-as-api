@@ -75,7 +75,7 @@ class SubKriteria1Controller extends Controller
             'id_k1' => 'required|numeric',
             'sub_kriteria' => 'required|string',
             'kode' => 'required|string',
-            'bobot' => 'required|numeric|not_in:0|regex:/^[1-9][0-9]+/',
+            'bobot' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -156,12 +156,12 @@ class SubKriteria1Controller extends Controller
      */
     public function update(Request $request, $id)
     {
-        $kriteria = SubKriteriaTahap1::where('nim', '=', $id)->firstOrFail();
+        $kriteria = SubKriteriaTahap1::where('id_sk1', '=', $id)->firstOrFail();
 
         $validator = Validator::make($request->all(), [
-            'subkriteria' => 'required|string',
+            'sub_kriteria' => 'required|string',
             'kode' => 'required|string',
-            'bobot' => 'required|numeric|not_in:0|regex:/^[1-9][0-9]+/',
+            'bobot' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -173,9 +173,9 @@ class SubKriteria1Controller extends Controller
 
         try {
             $kriteria->update([
-                'kriteria' => $request->subkriteria,
+                'sub_kriteria' => $request->sub_kriteria,
                 'kode' => $request->kode,
-                'sk_sc' => Str::snake($request->subkriteria),
+                'sk_sc' => Str::snake($request->sub_kriteria),
                 'bobot' => $request->bobot,
 
             ]);

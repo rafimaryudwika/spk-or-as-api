@@ -75,7 +75,7 @@ class SubKriteria2Controller extends Controller
             'id_k2' => 'required|numeric',
             'sub_kriteria' => 'required|string',
             'kode' => 'required|string',
-            'bobot' => 'required|numeric|not_in:0|regex:/^[1-9][0-9]+/',
+            'bobot' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -161,7 +161,7 @@ class SubKriteria2Controller extends Controller
         $validator = Validator::make($request->all(), [
             'sub_kriteria' => 'required|string',
             'kode' => 'required|string',
-            'bobot' => 'required|numeric|not_in:0|regex:/^[1-9][0-9]+/',
+            'bobot' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -219,7 +219,7 @@ class SubKriteria2Controller extends Controller
         } catch (Throwable $e) {
             return response()->json([
                 'message' => "Deleting failed: " . $e->getMessage()
-            ]);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

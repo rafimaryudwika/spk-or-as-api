@@ -47,7 +47,7 @@ class Kriteria2Controller extends Controller
         $validator = Validator::make($request->all(), [
             'kode' => 'required|string',
             'kriteria' => 'required|string',
-            'bobot' => 'required|numeric|not_in:0|regex:/^[1-9][0-9]+/',
+            'bobot' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -132,7 +132,7 @@ class Kriteria2Controller extends Controller
         $validator = Validator::make($request->all(), [
             'kriteria' => 'required|string',
             'kode' => 'required|string',
-            'bobot' => 'required|numeric|not_in:0|regex:/^[1-9][0-9]+/',
+            'bobot' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
