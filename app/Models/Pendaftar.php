@@ -17,6 +17,10 @@ class Pendaftar extends Model
     {
         return $this->belongsTo(Fakultas::class, 'id_f');
     }
+    public function BidangFakultas()
+    {
+        return $this->belongsTo(BidangFakultas::class, 'id_f');
+    }
 
     public function Jurusan()
     {

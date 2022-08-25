@@ -16,4 +16,8 @@ class BidangFakultas extends Model
     {
         return $this->hasMany(Fakultas::class);
     }
+    public function Jurusan()
+    {
+        return $this->hasManyThrough(Jurusan::class, Fakultas::class);
+    }
 }

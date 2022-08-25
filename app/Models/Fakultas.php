@@ -14,7 +14,7 @@ class Fakultas extends Model
 
     public function BidangFakultas()
     {
-        return $this->belongsTo(BidangFakultas::class, 'id_bf');
+        return $this->belongsTo(BidangFakultas::class, 'id_bf', 'id_bf');
     }
     public function Jurusan()
     {
