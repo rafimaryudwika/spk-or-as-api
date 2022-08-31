@@ -17,20 +17,6 @@ class PendaftarController extends Controller
      */
     public function index()
     {
-        // $pendaftar = Pendaftar::join('gender', 'pendaftar.id_g', '=', 'gender.id_g')
-        //     ->join('jurusan', 'pendaftar.id_j', '=', 'jurusan.id_j')
-        //     ->join('fakultas', 'jurusan.id_f', '=', 'fakultas.id_f')
-        //     ->join('bidang_fak', 'fakultas.id_bf', '=', 'bidang_fak.id_bf')
-        //     ->orderBy('tgl_daftar')
-        //     ->get([
-        //         'pendaftar.tgl_daftar',
-        //         'pendaftar.nim',
-        //         'pendaftar.nama',
-        //         'gender.gender',
-        //         'pendaftar.tgl_lahir',
-        //         'fakultas.fakultas',
-        //         'jurusan.jurusan'
-        //     ]);
         $pendaftar = $pendaftar = Pendaftar::with([
             'Fakultas',
             'Jurusan',

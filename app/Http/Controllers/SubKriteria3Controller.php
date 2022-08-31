@@ -21,40 +21,23 @@ class SubKriteria3Controller extends Controller
      */
     public function index()
     {
-        $kriteria = KriteriaTahap3::get();
-        $subkriteria = SubKriteriaTahap3::with('KriteriaTahap3')->get();
-        $a = 0;
-
-        foreach ($kriteria as $k) {
-            $data[$a]['id_k3'] = $k->id_k3;
-            $data[$a]['kode'] = $k->kode;
-            $data[$a]['kriteria'] = $k->kriteria;
-            $data[$a]['k_sc'] = $k->k_sc;
-            $data[$a]['bobot'] = $k->bobot;
-            foreach ($subkriteria as $sk) {
-                $count = $sk->where('id_k3', $k->id_k3)->get();
-                if ($count->count() > 1) {
-                    foreach ($count as $i => $c) {
-                        $ssk = $sk->where('id_k3', $k->id_k3);
-                        $nsk = $ssk->where('id_sk3', $c->id_sk3)->get(['id_sk3', 'sub_kriteria', 'sk_sc', 'kode', 'bobot'])->first();
-                        $jsk[$i]['id_sk3'] = $nsk->id_sk3;
-                        $jsk[$i]['kode'] = $nsk->kode;
-                        $jsk[$i]['sub_kriteria'] = $nsk->sub_kriteria;
-                        $jsk[$i]['sk_sc'] = $nsk->sk_sc;
-                        $jsk[$i]['bobot'] = $nsk->bobot;
-                    }
-                    $data[$a]['subkriteria'] = $jsk;
-                } elseif ($count->count() == 1) {
-                    foreach ($count as $i => $c) {
-                        $ssk = $sk->where('id_k3', $k->id_k3);
-                        $nsk = $ssk->where('id_sk3', $c->id_sk3)->get(['id_sk3', 'sub_kriteria', 'sk_sc', 'kode', 'bobot'])->first();
-                        $data[$a]['id_sk3'] = $nsk->id_sk3;
-                        $data[$a]['bobot_sk'] = $nsk->bobot;
-                    }
+        $kriteria_new = KriteriaTahap3::with('SubKriteriaTahap3')->get();
+        $data = $kriteria_new->map(function ($item) {
+            foreach ($item->SubKriteriaTahap3 as $skk => $skv) {
+                if ($item->SubKriteriaTahap3->count() > 1) {
+                    $subk[$skk]['id_sk3'] = $skv->id_sk3;
+                    $subk[$skk]['kode'] = $skv->kode;
+                    $subk[$skk]['sub_kriteria'] = $skv->sub_kriteria;
+                    $subk[$skk]['sk_sc'] = $skv->sk_sc;
+                    $subk[$skk]['bobot'] = $skv->bobot;
+                    $item->subkriteria = $subk;
+                } elseif ($item->SubKriteriaTahap3->count() == 1) {
+                    $item->id_sk3 = $skv->id_sk3;
+                    $item->bobot_sk = $skv->bobot;
                 }
             }
-            $a++;
-        }
+            return $item->makeHidden('SubKriteriaTahap3', 'created_at', 'updated_at');
+        });
         $response = [
             'message' => 'Data sub-kriteria tahap 3 OR',
             'data' => $data

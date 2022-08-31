@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Throwable;
-use Illuminate\Support\Str;
+use App\Models\Pendaftar;
 use Illuminate\Http\Request;
 use App\Models\PesertaTahap2;
 use App\Models\PesertaTahap3;
@@ -15,159 +15,149 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Penilaian3Controller extends Controller
 {
-
     public function index()
     {
-        $kriteria = KriteriaTahap3::get();
-        $nm = PenilaianTahap3::groupBy('nim')->get('nim');
+        $pendaftar = Pendaftar::query()
+            ->with(['Gender', 'Jurusan', 'Fakultas.BidangFakultas', 'PesertaTahap3', 'PenilaianTahap3.SubKriteriaTahap3.KriteriaTahap3'])
+            ->whereHas('PesertaTahap3')
+            ->get();
+        $kriteria = KriteriaTahap3::query()->with(['SubKriteriaTahap3'])
+            ->get();
+        $bobot = $kriteria->map(function ($query) {
+            $name = $query->k_sc;
+            $query->{$name} = $query->bobot;
+            if ($query->SubKriteriaTahap3->count() > 1) {
+                $query->sub_kriteria = $query->SubKriteriaTahap3
+                    ->groupBy('SubKriteriaTahap3.sk_sc')->map(function ($query) {
+                        return $query->mapWithKeys(function ($sub) {
+                            return [$sub->sk_sc => $sub->bobot];
+                        });
+                    });
+            }
+            return $query->only($query->k_sc, 'sub_kriteria');
+        });
+        $nilai = $pendaftar->filter(function ($query) {
+            return $query->PenilaianTahap3->isNotEmpty();
+        })->values()->map(function ($query) {
+            $detail['nama_panggilan'] = $query->panggilan;
+            $detail['e-mail'] = $query->email;
+            $detail['nomor_hp'] = $query->no_hp;
+            $detail['gender'] = $query->gender->gender;
+            $detail['tempat_lahir'] = $query->tempat_lahir;
+            $detail['tanggal_lahir'] = $query->tgl_lahir;
+            $detail['fakultas'] = $query->fakultas->fakultas;
+            $detail['jurusan'] = $query->jurusan->jurusan;
+            $detail['bidang_fakultas'] = $query->Fakultas->BidangFakultas->bidang_fak;
+            $detail['alamat_di_padang'] = $query->alamat_pdg;
+            $query->detail = $detail;
+            $query->lulus = $query->PesertaTahap3->lulus;
+            $query->nilai = $query->PenilaianTahap3
+                ->groupBy(['SubKriteriaTahap3.KriteriaTahap3.k_sc'])
+                ->map(function ($query) {
+                    if ($query->count() > 1) {
+                        return $query->mapWithKeys(function ($sub) {
+                            return [
+                                $sub->SubKriteriaTahap3->sk_sc => $sub->nilai
+                            ];
+                        });
+                    } elseif ($query->count() == 1) {
+                        return $query->pluck('nilai')->first();
+                    }
+                });
+            return $query->only('nim', 'nama', 'nilai', 'detail', 'lulus');
+        });
 
-        $peserta1 = PesertaTahap3::with([
-            'PesertaTahap2',
-            'PesertaTahap2.PesertaTahap1',
-            'PesertaTahap2.PesertaTahap1.Pendaftar',
-            'PesertaTahap2.PesertaTahap1.Pendaftar.Gender',
-            'PesertaTahap2.PesertaTahap1.Pendaftar.Fakultas',
-            'PesertaTahap2.PesertaTahap1.Pendaftar.Jurusan',
-            'PesertaTahap2.PesertaTahap1.Pendaftar.Fakultas.BidangFakultas'
-        ])->get();
-        foreach ($peserta1 as $i => $p) {
-            if ($p == null) {
-                $peserta[$i]['nim'] = 'nodata';
-            } else {
-                $peserta[$i]['nim'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->nim;
-                $peserta[$i]['nama'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->nama;
-                $data_p['nama_panggilan'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->panggilan;
-                $data_p['e_mail'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->email;
-                $data_p['nomor_hp'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->no_hp;
-                $data_p['gender'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->gender->gender;
-                $data_p['tempat_lahir'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->tempat_lahir;
-                $data_p['tanggal_lahir'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->tgl_lahir;
-                $data_p['fakultas'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->Fakultas->fakultas;
-                $data_p['jurusan'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->Jurusan->jurusan;
-                $data_p['bidang_fakultas'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->Fakultas->BidangFakultas->bidang_fak;
-                $data_p['alamat_di_padang'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->alamat_pdg;
-                $peserta[$i]['detail'] = $data_p;
-                if (count($nm) === 0) {
-                    $peserta[$i]['nilai'] = 'nodata';
+        $max = $pendaftar->pluck('PenilaianTahap3')
+            ->flatten()->groupBy(['SubKriteriaTahap3.KriteriaTahap3.k_sc', 'SubKriteriaTahap3.sk_sc'])
+            ->map(function ($query) {
+                if ($query->count() > 1) {
+                    return $query->map(function ($sub) {
+                        return $sub->max('nilai');
+                    });
+                } elseif ($query->count() == 1) {
+                    foreach ($query as $qk => $qv) {
+                        return $qv->max('nilai');
+                    }
+                }
+            });
+
+        $norm = $nilai->map(function ($item) use ($max) {
+            foreach ($item['nilai'] as $k => $v) {
+                if (is_object($v) == true) {
+                    foreach ($v as $k2 => $v2) {
+                        $item['normalisasi'][$k][$k2] = number_format($v2 / $max[$k][$k2], 3);
+                    }
                 } else {
-                    foreach ($nm as $v) {
-                        if ($p->nim != $v->nim) {
-                            $peserta[$i]['nilai'] = 'nodata';
-                        } else {
-                            foreach ($kriteria as $k) {
-                                $match = ['nim' => $v->nim, 'id_k3' => $k->id_k3];
-                                $sub_k['kriteria_' . $k->id_k3] = SubKriteriaTahap3::where('id_k3', $k->id_k3)->get('id_sk3');
-                                if (count($sub_k['kriteria_' . $k->id_k3]) > 1) { // jika sub-kriteria dalam kriteria lebih dari 1
-                                    $multi_sub = SubKriteriaTahap3::with('KriteriaTahap3')->where('id_k3', $k->id_k3)->get();
-                                    foreach ($multi_sub as $jsk) {
-                                        $match2 = ['nim' => $v->nim, 'id_k3' => $k->id_k3, 'sub_kriteria_t3.id_sk3' => $jsk->id_sk3];
-                                        $m_sub[Str::snake($jsk->sub_kriteria)] =  PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                                            ->where($match2)->pluck('nilai')->first();
-                                        $nilaii[Str::snake($k->kriteria)] = $m_sub;
-                                    }
-                                } elseif (count($sub_k['kriteria_' . $k->id_k3]) == 1) {
-                                    $nilaii[Str::snake($k->kriteria)] = PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                                        ->where($match)->select('nilai')->first()->nilai;
-                                }
+                    $item['normalisasi'][$k] = number_format($v / $max[$k], 3);
+                }
+            }
+            return $item;
+        }, $nilai);
+        $sub_total = $norm->map(function ($item) use ($bobot) {
+            foreach ($item['normalisasi'] as $k => $v) {
+                $totalTemp = 0;
+                if (is_array($v) == true) {
+                    foreach ($v as $k2 => $v2) {
+                        foreach ($bobot as $vSub) {
+                            if (isset($vSub[$k])) {
+                                $totalTemp += $v2 * $vSub['sub_kriteria'][""][$k2]; //ada kemungkinan bug terjadi disini karena $v2 memanggil array terakhir drpd memanggil array 'total'
+                                $item['normalisasi'][$k]['total'] = number_format($totalTemp, 3);
+                                break;
                             }
-                            $peserta[$i]['nilai'] = $nilaii;
-                            $peserta[$i]['lulus'] = $p->lulus;
-                            break;
                         }
+                    }
+                } else {
+                    $item['normalisasi'][$k] = $v;
+                }
+            }
+            return $item;
+        }, $nilai);
+        foreach ($sub_total as $stk => $stv) {
+            foreach ($stv['normalisasi'] as $nk => $nv) {
+                if (is_array($nv) == true) {
+                    $test[$nk] = $nv['total'];
+                } else {
+                    $test[$nk] = $nv;
+                }
+            }
+            $max_krit[$stk] = $test;
+        }
+        $max_k = [];
+        foreach ($max_krit as $keys => $values) {
+            foreach ($values as $keys2 => $data) {
+                $max_k[$keys2] = max(array_column($max_krit, $keys2));
+            }
+        }
+
+        $norm_k = $sub_total->map(function ($item) use ($max_k) {
+            foreach ($item['normalisasi'] as $k => $v) {
+                if (is_array($v) == true) {
+                    foreach ($v as $k2 => $v2) {
+                        $item['new_norm'][$k] = number_format($v2 / $max_k[$k], 3);
+                    }
+                } else {
+                    $item['new_norm'][$k] = number_format($v / $max_k[$k], 3);
+                }
+            }
+            return $item;
+        });
+
+        $total_k = $norm_k->map(function ($item) use ($bobot) {
+            $totalTemp = 0;
+            foreach ($item['new_norm'] as $k => $v) {
+                foreach ($bobot as $vSub) {
+                    if (isset($vSub[$k])) {
+                        $totalTemp += $v * $vSub[$k];
+                        $item['total'] = number_format($totalTemp, 3);
                     }
                 }
             }
-        }
+            return $item;
+        }, $nilai);
 
         $response = [
             'message' => 'Data peserta tahap 3 OR XI',
-            'data' => $peserta
-        ];
-        return response()->json($response, Response::HTTP_OK);
-    }
-
-    public function calculate()
-    {
-        $kriteria = KriteriaTahap3::pluck('id_k3', 'k_sc');
-        $nm = PenilaianTahap3::join('peserta_t3', 'nilai_t3.nim', '=', 'peserta_t3.nim')
-            ->join('pendaftar', 'peserta_t3.nim', '=', 'pendaftar.nim')
-            ->groupBy('nilai_t3.nim')->get(['nilai_t3.nim', 'pendaftar.nama', 'peserta_t3.lulus']);
-
-        $e = 0;
-        foreach ($nm as $v) {
-            $krittt[$e]['nim'] = $v->nim;
-            $krittt[$e]['nama'] = $v->nama;
-            foreach ($kriteria as $nk => $k) {
-                $match = ['nim' => $v->nim, 'id_k3' => $k];
-                $sub_k['kriteria_' . $k] = SubKriteriaTahap3::where('id_k3', $k)->get('id_sk3');
-                $n_bobot[$nk] = SubKriteriaTahap3::join('kriteria_t3', 'sub_kriteria_t3.id_k3', '=', 'kriteria_t3.id_k3')
-                    ->where(['kriteria_t3.id_k3' => $k])->pluck('kriteria_t3.bobot')->first();
-                if (count($sub_k['kriteria_' . $k]) > 1) { // jika sub-kriteria dalam kriteria lebih dari 1
-                    $multi_sub = SubKriteriaTahap3::join('kriteria_t3', 'sub_kriteria_t3.id_k3', '=', 'kriteria_t3.id_k3')
-                        ->where('kriteria_t3.id_k3', $k)->pluck('sub_kriteria_t3.id_sk3', 'sub_kriteria_t3.sk_sc');
-                    foreach ($multi_sub as $jsk => $ns) {
-                        $match2 = ['nim' => $v->nim, 'id_k3' => $k, 'sub_kriteria_t3.id_sk3' => $ns];
-                        $m_sub[$jsk] =  PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                            ->where($match2)->pluck('nilai')->first();
-                        $ms_max[$jsk] = PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                            ->where(['id_k3' => $k, 'sub_kriteria_t3.id_sk3' => $ns])->max('nilai');
-                        $ms_bobot[$jsk] = SubKriteriaTahap3::join('kriteria_t3', 'sub_kriteria_t3.id_k3', '=', 'kriteria_t3.id_k3')
-                            ->where(['kriteria_t3.id_k3' => $k, 'sub_kriteria_t3.id_sk3' => $ns])->pluck('sub_kriteria_t3.bobot')->first();
-                        $nilaii[$nk] = $m_sub;
-                        $ms_norm[$jsk] = number_format(collect($m_sub)->get($jsk) / collect($ms_max)->get($jsk), 2);
-                        $ms_calc[$jsk] = number_format(collect($ms_norm)->get($jsk) * collect($ms_bobot)->get($jsk), 2);
-                        $ms_total['total'] = number_format(collect($ms_calc)->sum(), 2);
-                        $normz[$nk] = $ms_norm;
-                        $calc[$nk] = $ms_total;
-                    }
-                    foreach ($ms_total as $mst) {
-                        $testin[$nk][] = $mst;
-                    }
-                } elseif (count($sub_k['kriteria_' . $k]) == 1) {
-                    $nilaii[$nk] = PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                        ->where($match)->select('nilai')->first()->nilai;
-                    $n_max[$nk] = PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                        ->where(['id_k3' => $k])->select('nilai')->max('nilai');
-                    $n_norm = number_format(collect($nilaii)->get($nk) / collect($n_max)->get($nk), 2);
-                    $n_norm2[$nk] = number_format(collect($nilaii)->get($nk) / collect($n_max)->get($nk), 2); // untuk variabel kalkulasi nilai, menghindari array dalam array
-                    $n_calc = number_format(collect($n_norm2)->get($nk) * collect($n_bobot)->get($nk), 2);
-                    $normz[$nk] = $n_norm;
-                    $calc[$nk] = $n_calc;
-                }
-            }
-            $krittt[$e]['nilai'] = $nilaii;
-            $krittt[$e]['normalisasi'] = $normz;
-            $krittt[$e]['total'] = $calc;
-            $krittt[$e]['lulus'] = $v->lulus;
-            $e++;
-        }
-
-        $f = 0;
-        foreach ($krittt as $krtt) {
-            $data[$f]['nim'] = collect($krtt)->get('nim');
-            $data[$f]['nama'] = collect($krtt)->get('nama');
-            $data[$f]['nilai'] = collect($krtt)->get('nilai');
-            $data[$f]['normalisasi'] = collect($krtt)->get('normalisasi');
-            foreach ($kriteria as $nk => $k) {
-                $sub_k['kriteria_' . $k] = SubKriteriaTahap3::where('id_k3', $k)->get('id_sk3');
-                $n_bobot[$nk] = SubKriteriaTahap3::join('kriteria_t3', 'sub_kriteria_t3.id_k3', '=', 'kriteria_t3.id_k3')
-                    ->where(['kriteria_t3.id_k3' => $k])->pluck('kriteria_t3.bobot')->first();
-                if (count($sub_k['kriteria_' . $k]) > 1) { // jika sub-kriteria dalam kriteria lebih dari 1
-                    $skr[$nk] = number_format(collect(collect(collect($krtt)->get('total'))->get($nk))->get('total'), 2);
-                    $skr_max[$nk] = (collect(collect($testin)->get($nk))->max());
-                    $norms[$nk] = number_format((collect($skr)->get($nk) / collect($skr_max)->get($nk)) * collect($n_bobot)->get($nk), 2);
-                } elseif (count($sub_k['kriteria_' . $k]) == 1) {
-                    $norms[$nk] = collect(collect($krtt)->get('total'))->get($nk);
-                }
-            }
-            $data[$f]['total'] = number_format(collect($norms)->sum(), 2);
-            $data[$f]['lulus'] = collect($krtt)->get('lulus');
-            $f++;
-        }
-
-        $response = [
-            'message' => 'Tabel kalkulasi penilaian OR tahap 2',
-            'data' => $data
+            'data' => $total_k
         ];
         return response()->json($response, Response::HTTP_OK);
     }
@@ -340,152 +330,149 @@ class Penilaian3Controller extends Controller
 
     public function show($id)
     {
-        $kriteria = KriteriaTahap3::pluck('id_k3', 'k_sc');
-        $nm = PenilaianTahap3::join('peserta_t3', 'nilai_t3.nim', '=', 'peserta_t3.nim')
-            ->join('pendaftar', 'peserta_t3.nim', '=', 'pendaftar.nim')->where('nilai_t3.nim', '=', $id)
-            ->groupBy('nilai_t3.nim')->get(['nilai_t3.nim', 'pendaftar.nama', 'peserta_t3.lulus']);
+        $pendaftar = Pendaftar::query()
+            ->with(['Gender', 'Jurusan', 'Fakultas.BidangFakultas', 'PesertaTahap3', 'PenilaianTahap3.SubKriteriaTahap3.KriteriaTahap3'])
+            ->whereHas('PesertaTahap3')
+            ->get();
+        $kriteria = KriteriaTahap3::query()->with(['SubKriteriaTahap3'])
+            ->get();
+        $bobot = $kriteria->map(function ($query) {
+            $name = $query->k_sc;
+            $query->{$name} = $query->bobot;
+            if ($query->SubKriteriaTahap3->count() > 1) {
+                $query->sub_kriteria = $query->SubKriteriaTahap3
+                    ->groupBy('SubKriteriaTahap3.sk_sc')->map(function ($query) {
+                        return $query->mapWithKeys(function ($sub) {
+                            return [$sub->sk_sc => $sub->bobot];
+                        });
+                    });
+            }
+            return $query->only($query->k_sc, 'sub_kriteria');
+        });
+        $nilai = $pendaftar->filter(function ($query) {
+            return $query->PenilaianTahap3->isNotEmpty();
+        })->values()->map(function ($query) {
+            $test['nama_panggilan'] = $query->panggilan;
+            $test['e-mail'] = $query->email;
+            $test['nomor_hp'] = $query->no_hp;
+            $test['gender'] = $query->gender->gender;
+            $test['tempat_lahir'] = $query->tempat_lahir;
+            $test['tanggal_lahir'] = $query->tgl_lahir;
+            $test['fakultas'] = $query->fakultas->fakultas;
+            $test['jurusan'] = $query->jurusan->jurusan;
+            $test['bidang_fakultas'] = $query->Fakultas->BidangFakultas->bidang_fak;
+            $test['alamat_di_padang'] = $query->alamat_pdg;
+            $query->detail = $test;
+            $query->lulus = $query->PesertaTahap3->lulus;
+            $query->nilai = $query->PenilaianTahap3
+                ->groupBy(['SubKriteriaTahap3.KriteriaTahap3.k_sc'])
+                ->map(function ($query) {
+                    if ($query->count() > 1) {
+                        return $query->mapWithKeys(function ($sub) {
+                            return [
+                                $sub->SubKriteriaTahap3->sk_sc => $sub->nilai
+                            ];
+                        });
+                    } elseif ($query->count() == 1) {
+                        return $query->pluck('nilai')->first();
+                    }
+                });
+            return $query->only('nim', 'nama', 'nilai', 'detail', 'lulus');
+        });
 
-        $e = 0;
-        foreach ($nm as $v) {
-            $krittt[$e]['nim'] = $v->nim;
-            $krittt[$e]['nama'] = $v->nama;
-            foreach ($kriteria as $nk => $k) {
-                $match = ['nim' => $v->nim, 'id_k3' => $k];
-                $sub_k['kriteria_' . $k] = SubKriteriaTahap3::where('id_k3', $k)->get('id_sk3');
-                $n_bobot[$nk] = SubKriteriaTahap3::join('kriteria_t3', 'sub_kriteria_t3.id_k3', '=', 'kriteria_t3.id_k3')
-                    ->where(['kriteria_t3.id_k3' => $k])->pluck('kriteria_t3.bobot')->first();
-                if (count($sub_k['kriteria_' . $k]) > 1) { // jika sub-kriteria dalam kriteria lebih dari 1
-                    $multi_sub = SubKriteriaTahap3::join('kriteria_t3', 'sub_kriteria_t3.id_k3', '=', 'kriteria_t3.id_k3')
-                        ->where('kriteria_t3.id_k3', $k)->pluck('sub_kriteria_t3.id_sk3', 'sub_kriteria_t3.sk_sc');
-                    foreach ($multi_sub as $jsk => $ns) {
-                        $match2 = ['nim' => $v->nim, 'id_k3' => $k, 'sub_kriteria_t3.id_sk3' => $ns];
-                        $m_sub[$jsk] =  PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                            ->where($match2)->pluck('nilai')->first();
-                        $ms_max[$jsk] = PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                            ->where(['id_k3' => $k, 'sub_kriteria_t3.id_sk3' => $ns])->max('nilai');
-                        $ms_bobot[$jsk] = SubKriteriaTahap3::join('kriteria_t3', 'sub_kriteria_t3.id_k3', '=', 'kriteria_t3.id_k3')
-                            ->where(['kriteria_t3.id_k3' => $k, 'sub_kriteria_t3.id_sk3' => $ns])->pluck('sub_kriteria_t3.bobot')->first();
-                        $nilaii[$nk] = $m_sub;
-                        $ms_norm[$jsk] = number_format(collect($m_sub)->get($jsk) / collect($ms_max)->get($jsk), 2);
-                        $ms_calc[$jsk] = number_format(collect($ms_norm)->get($jsk) * collect($ms_bobot)->get($jsk), 2);
-                        $ms_total['total'] = number_format(collect($ms_calc)->sum(), 2);
-                        $normz[$nk] = $ms_norm;
-                        $calc[$nk] = $ms_total;
+        $max = $pendaftar->pluck('PenilaianTahap3')
+            ->flatten()->groupBy(['SubKriteriaTahap3.KriteriaTahap3.k_sc', 'SubKriteriaTahap3.sk_sc'])
+            ->map(function ($query) {
+                if ($query->count() > 1) {
+                    return $query->map(function ($sub) {
+                        return $sub->max('nilai');
+                    });
+                } elseif ($query->count() == 1) {
+                    foreach ($query as $qk => $qv) {
+                        return $qv->max('nilai');
                     }
-                    foreach ($ms_total as $mst) {
-                        $testin[$nk][] = $mst;
+                }
+            });
+
+        $norm = $nilai->map(function ($item) use ($max) {
+            foreach ($item['nilai'] as $k => $v) {
+                if (is_object($v) == true) {
+                    foreach ($v as $k2 => $v2) {
+                        $item['normalisasi'][$k][$k2] = number_format($v2 / $max[$k][$k2], 3);
                     }
-                } elseif (count($sub_k['kriteria_' . $k]) == 1) {
-                    $nilaii[$nk] = PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                        ->where($match)->select('nilai')->first()->nilai;
-                    $n_max[$nk] = PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                        ->where(['id_k3' => $k])->select('nilai')->max('nilai');
-                    $n_norm = number_format(collect($nilaii)->get($nk) / collect($n_max)->get($nk), 2);
-                    $n_norm2[$nk] = number_format(collect($nilaii)->get($nk) / collect($n_max)->get($nk), 2); // untuk variabel kalkulasi nilai, menghindari array dalam array
-                    $n_calc = number_format(collect($n_norm2)->get($nk) * collect($n_bobot)->get($nk), 2);
-                    $normz[$nk] = $n_norm;
-                    $calc[$nk] = $n_calc;
+                } else {
+                    $item['normalisasi'][$k] = number_format($v / $max[$k], 3);
                 }
             }
-            $krittt[$e]['nilai'] = $nilaii;
-            $krittt[$e]['normalisasi'] = $normz;
-            $krittt[$e]['total'] = $calc;
-            $krittt[$e]['lulus'] = $v->lulus;
-            $e++;
-        }
-
-        $f = 0;
-        foreach ($krittt as $krtt) {
-            $data[$f]['nim'] = collect($krtt)->get('nim');
-            $data[$f]['nama'] = collect($krtt)->get('nama');
-            $data[$f]['nilai'] = collect($krtt)->get('nilai');
-            $data[$f]['normalisasi'] = collect($krtt)->get('normalisasi');
-            foreach ($kriteria as $nk => $k) {
-                $sub_k['kriteria_' . $k] = SubKriteriaTahap3::where('id_k3', $k)->get('id_sk3');
-                $n_bobot[$nk] = SubKriteriaTahap3::join('kriteria_t3', 'sub_kriteria_t3.id_k3', '=', 'kriteria_t3.id_k3')
-                    ->where(['kriteria_t3.id_k3' => $k])->pluck('kriteria_t3.bobot')->first();
-                if (count($sub_k['kriteria_' . $k]) > 1) { // jika sub-kriteria dalam kriteria lebih dari 1
-                    $skr[$nk] = number_format(collect(collect(collect($krtt)->get('total'))->get($nk))->get('total'), 2);
-                    $skr_max[$nk] = (collect(collect($testin)->get($nk))->max());
-                    $norms[$nk] = number_format((collect($skr)->get($nk) / collect($skr_max)->get($nk)) * collect($n_bobot)->get($nk), 2);
-                } elseif (count($sub_k['kriteria_' . $k]) == 1) {
-                    $norms[$nk] = collect(collect($krtt)->get('total'))->get($nk);
+            return $item;
+        }, $nilai);
+        $sub_total = $norm->map(function ($item) use ($bobot) {
+            foreach ($item['normalisasi'] as $k => $v) {
+                $totalTemp = 0;
+                if (is_array($v) == true) {
+                    foreach ($v as $k2 => $v2) {
+                        foreach ($bobot as $vSub) {
+                            if (isset($vSub[$k])) {
+                                $totalTemp += $v2 * $vSub['sub_kriteria'][""][$k2];
+                                $item['normalisasi'][$k]['total'] = number_format($totalTemp, 3);
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    $item['normalisasi'][$k] = $v;
                 }
             }
-            $data[$f]['total'] = number_format(collect($norms)->sum(), 2);
-            $data[$f]['lulus'] = collect($krtt)->get('lulus');
-            $f++;
+            return $item;
+        }, $nilai);
+        foreach ($sub_total as $stk => $stv) {
+            foreach ($stv['normalisasi'] as $nk => $nv) {
+                if (is_array($nv) == true) {
+                    $test[$nk] = $nv['total'];
+                } else {
+                    $test[$nk] = $nv;
+                }
+            }
+            $max_krit[$stk] = $test;
         }
+        $max_k = [];
+        foreach ($max_krit as $keys => $values) {
+            foreach ($values as $keys2 => $data) {
+                $max_k[$keys2] = max(array_column($max_krit, $keys2));
+            }
+        }
+
+        $norm_k = $sub_total->map(function ($item) use ($max_k) {
+            foreach ($item['normalisasi'] as $k => $v) {
+                if (is_array($v) == true) {
+                    foreach ($v as $k2 => $v2) {
+                        $item['new_norm'][$k] = number_format($v2 / $max_k[$k], 3);
+                    }
+                } else {
+                    $item['new_norm'][$k] = number_format($v / $max_k[$k], 3);
+                }
+            }
+            return $item;
+        });
+
+        $total_k = $norm_k->map(function ($item) use ($bobot) {
+            $totalTemp = 0;
+            foreach ($item['new_norm'] as $k => $v) {
+                foreach ($bobot as $vSub) {
+                    if (isset($vSub[$k])) {
+                        $totalTemp += $v * $vSub[$k];
+                        $item['total'] = number_format($totalTemp, 3);
+                    }
+                }
+            }
+            return $item;
+        }, $nilai);
+
+        $where = $total_k->where('nim', $id)->values();
 
         $response = [
             'message' => 'Detail salah satu peserta tahap 3 OR XI',
-            'data' => $data
-        ];
-        return response()->json($response, Response::HTTP_OK);
-    }
-
-    public function show2($id)
-    {
-        $kriteria = KriteriaTahap3::get();
-        $nm = PenilaianTahap3::groupBy('nim')->get('nim');
-
-        $peserta1 = PesertaTahap3::with([
-            'PesertaTahap2',
-            'PesertaTahap2.PesertaTahap1',
-            'PesertaTahap2.PesertaTahap1.Pendaftar',
-            'PesertaTahap2.PesertaTahap1.Pendaftar.Gender',
-            'PesertaTahap2.PesertaTahap1.Pendaftar.Fakultas',
-            'PesertaTahap2.PesertaTahap1.Pendaftar.Jurusan',
-            'PesertaTahap2.PesertaTahap1.Pendaftar.Fakultas.BidangFakultas'
-        ])->where('nim', $id)->get();
-        foreach ($peserta1 as $i => $p) {
-            $peserta[$i]['nim'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->nim;
-            $peserta[$i]['nama'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->nama;
-            $data_p['nama_panggilan'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->panggilan;
-            $data_p['e_mail'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->email;
-            $data_p['nomor_hp'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->no_hp;
-            $data_p['gender'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->gender->gender;
-            $data_p['tempat_lahir'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->tempat_lahir;
-            $data_p['tanggal_lahir'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->tgl_lahir;
-            $data_p['fakultas'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->Fakultas->fakultas;
-            $data_p['jurusan'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->Jurusan->jurusan;
-            $data_p['bidang_fakultas'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->Fakultas->BidangFakultas->bidang_fak;
-            $data_p['alamat_di_padang'] = $p->PesertaTahap2->PesertaTahap1->Pendaftar->alamat_pdg;
-            $peserta[$i]['detail'] = $data_p;
-            if (count($nm) === 0) {
-                $peserta[$i]['nilai'] = 'nodata';
-            } else {
-                foreach ($nm as $v) {
-                    if ($p->nim != $v->nim) {
-                        $peserta[$i]['nilai'] = 'nodata';
-                    } else {
-                        foreach ($kriteria as $k) {
-                            $match = ['nim' => $v->nim, 'id_k3' => $k->id_k3];
-                            $sub_k['kriteria_' . $k->id_k3] = SubKriteriaTahap3::where('id_k3', $k->id_k3)->get('id_sk3');
-                            if (count($sub_k['kriteria_' . $k->id_k3]) > 1) { // jika sub-kriteria dalam kriteria lebih dari 1
-                                $multi_sub = SubKriteriaTahap3::with('KriteriaTahap3')->where('id_k3', $k->id_k3)->get();
-                                foreach ($multi_sub as $jsk) {
-                                    $match2 = ['nim' => $v->nim, 'id_k3' => $k->id_k3, 'sub_kriteria_t3.id_sk3' => $jsk->id_sk3];
-                                    $m_sub[Str::snake($jsk->sub_kriteria)] =  PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                                        ->where($match2)->pluck('nilai')->first();
-                                    $nilaii[Str::snake($k->kriteria)] = $m_sub;
-                                }
-                            } elseif (count($sub_k['kriteria_' . $k->id_k3]) == 1) {
-                                $nilaii[Str::snake($k->kriteria)] = PenilaianTahap3::join('sub_kriteria_t3', 'nilai_t3.id_sk3', '=', 'sub_kriteria_t3.id_sk3')
-                                    ->where($match)->select('nilai')->first()->nilai;
-                            }
-                        }
-                        $peserta[$i]['nilai'] = $nilaii;
-                        $peserta[$i]['lulus'] = $p->lulus;
-                        break;
-                    }
-                }
-            }
-        }
-
-        $response = [
-            'message' => 'Data peserta tahap 3 OR XI',
-            'data' => $peserta
+            'data' => $where
         ];
         return response()->json($response, Response::HTTP_OK);
     }

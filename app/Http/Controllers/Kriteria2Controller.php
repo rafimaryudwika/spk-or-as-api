@@ -45,8 +45,8 @@ class Kriteria2Controller extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'kode' => 'required|string',
             'kriteria' => 'required|string',
+            'kode' => 'required|string',
             'bobot' => 'required|numeric|min:0',
         ]);
 
@@ -63,7 +63,7 @@ class Kriteria2Controller extends Controller
             if ($num == null) {
                 $b = $a;
             } else {
-                $b = $num->tipe_info1 + $a;
+                $b = $num->id_k2 + $a;
             }
             $kriteria =  KriteriaTahap2::create([
                 'id_k2' => $b,

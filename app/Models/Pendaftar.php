@@ -40,6 +40,10 @@ class Pendaftar extends Model
     {
         return $this->hasOne(PesertaTahap2::class, 'nim');
     }
+    public function PesertaTahap3()
+    {
+        return $this->hasOne(PesertaTahap3::class, 'nim');
+    }
 
     public function PenilaianTahap2()
     {
@@ -48,5 +52,9 @@ class Pendaftar extends Model
     public function PenilaianTahap1()
     {
         return $this->hasMany(PenilaianTahap1::class, 'nim', 'nim');
+    }
+    public function PenilaianTahap3()
+    {
+        return $this->hasMany(PenilaianTahap3::class, 'nim', 'nim');
     }
 }

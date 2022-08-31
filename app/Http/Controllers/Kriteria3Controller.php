@@ -58,7 +58,7 @@ class Kriteria3Controller extends Controller
             if ($num == null) {
                 $b = $a;
             } else {
-                $b = $num->tipe_info1 + $a;
+                $b = $num->id_k3 + $a;
             }
             $kriteria =  KriteriaTahap3::create([
                 'id_k3' => $b,
