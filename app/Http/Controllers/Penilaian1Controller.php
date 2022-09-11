@@ -335,20 +335,21 @@ class Penilaian1Controller extends Controller
         $bobot = $kriteria->map(function ($query) {
             $name = $query->k_sc;
             $query->{$name} = $query->bobot;
-            $query->sub_kriteria = $query->SubKriteriaTahap1
-                ->groupBy('SubKriteriaTahap1.sk_sc')->map(function ($query) {
-                    return $query->mapWithKeys(function ($sub) {
-                        return [$sub->sk_sc => $sub->bobot];
+            if ($query->SubKriteriaTahap1->count() > 1) {
+                $query->sub_kriteria = $query->SubKriteriaTahap1
+                    ->groupBy('SubKriteriaTahap1.sk_sc')->map(function ($query) {
+                        return $query->mapWithKeys(function ($sub) {
+                            return [$sub->sk_sc => $sub->bobot];
+                        });
                     });
-                });
-
+            }
             return $query->only($query->k_sc, 'sub_kriteria');
         });
         $nilai = $pendaftar->filter(function ($query) {
             return $query->PenilaianTahap1->isNotEmpty();
         })->values()->map(function ($query) {
             $test['nama_panggilan'] = $query->panggilan;
-            $test['e_mail'] = $query->email;
+            $test['e-mail'] = $query->email;
             $test['nomor_hp'] = $query->no_hp;
             $test['gender'] = $query->gender->gender;
             $test['tempat_lahir'] = $query->tempat_lahir;
@@ -364,25 +365,22 @@ class Penilaian1Controller extends Controller
                 ->map(function ($query) {
                     if ($query->count() > 1) {
                         return $query->mapWithKeys(function ($sub) {
-                            return [
-                                $sub->SubKriteriaTahap1->sk_sc => $sub->nilai
-                            ];
+                            return [$sub->SubKriteriaTahap1->sk_sc => $sub->nilai];
                         });
-                    } elseif ($query->count() == 1) {
+                    } else {
                         return $query->pluck('nilai')->first();
                     }
                 });
             return $query->only('nim', 'nama', 'nilai', 'detail', 'lulus');
         });
-
-        $max = $pendaftar->pluck('PenilaianTahap2')
-            ->flatten()->groupBy(['SubKriteriaTahap2.KriteriaTahap2.k_sc', 'SubKriteriaTahap2.sk_sc'])
+        $max = $pendaftar->pluck('PenilaianTahap1')
+            ->flatten()->groupBy(['SubKriteriaTahap1.KriteriaTahap1.k_sc', 'SubKriteriaTahap1.sk_sc'])
             ->map(function ($query) {
                 if ($query->count() > 1) {
                     return $query->map(function ($sub) {
                         return $sub->max('nilai');
                     });
-                } elseif ($query->count() == 1) {
+                } else {
                     foreach ($query as $qk => $qv) {
                         return $qv->max('nilai');
                     }
@@ -462,7 +460,6 @@ class Penilaian1Controller extends Controller
             }
             return $item;
         }, $nilai);
-
         $where = $total_k->where('nim', $id)->values();
         $response = [
             'message' => 'Detail salah satu peserta tahap 2 OR XI',
