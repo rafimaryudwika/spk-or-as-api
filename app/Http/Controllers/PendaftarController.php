@@ -10,11 +10,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PendaftarController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
         $pendaftar = $pendaftar = Pendaftar::with([

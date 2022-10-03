@@ -24,9 +24,11 @@ class CreatePendaftarsTable extends Migration
             $table->date('tgl_lahir');
             $table->string('alamat_pdg');
             $table->bigInteger('no_hp');
-            $table->foreignId('fakultas_id');
-            $table->foreignId('jurusan_id');
             $table->boolean('daftar_ulang');
+            $table->bigInteger('periode');
+            $table->foreign('gender_id')->references('id')->on('gender');
+            $table->foreign('fakultas_id')->references('id')->on('fakultas');
+            $table->foreign('jurusan_id')->references('id')->on('jurusan');
         });
     }
 

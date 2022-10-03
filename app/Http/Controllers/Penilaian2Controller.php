@@ -369,9 +369,7 @@ class Penilaian2Controller extends Controller
                 ->map(function ($query) {
                     if ($query->count() > 1) {
                         return $query->mapWithKeys(function ($sub) {
-                            return [
-                                $sub->SubKriteriaTahap2->sk_sc => $sub->nilai
-                            ];
+                            return [$sub->SubKriteriaTahap2->sk_sc => $sub->nilai];
                         });
                     } elseif ($query->count() == 1) {
                         return $query->pluck('nilai')->first();
@@ -379,7 +377,6 @@ class Penilaian2Controller extends Controller
                 });
             return $query->only('nim', 'nama', 'nilai', 'detail', 'lulus');
         });
-
         $max = $pendaftar->pluck('PenilaianTahap2')
             ->flatten()->groupBy(['SubKriteriaTahap2.KriteriaTahap2.k_sc', 'SubKriteriaTahap2.sk_sc'])
             ->map(function ($query) {
