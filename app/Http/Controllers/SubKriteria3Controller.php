@@ -54,6 +54,8 @@ class SubKriteria3Controller extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('panitia', User::class);
+
         $validator = Validator::make($request->all(), [
             'id_k3' => 'required|numeric',
             'sub_kriteria' => 'required|string',
@@ -139,6 +141,8 @@ class SubKriteria3Controller extends Controller
      */
     public function update(Request $request, $id)
     {
+        $this->authorize('panitia', User::class);
+
         $kriteria = SubKriteriaTahap3::where('id_sk3', '=', $id)->firstOrFail();
 
         $validator = Validator::make($request->all(), [
@@ -182,6 +186,8 @@ class SubKriteria3Controller extends Controller
      */
     public function destroy($id)
     {
+        $this->authorize('panitia', User::class);
+
         $kriteria = SubKriteriaTahap3::findOrFail($id);
 
         try {
@@ -190,15 +196,15 @@ class SubKriteria3Controller extends Controller
                 $response = [
                     'message' => 'Subkriteria tidak bisa dihapus karena sedang proses penilaian'
                 ];
+                return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
             } else if ($detect == 0) {
                 $kriteria->delete();
                 $response = [
                     'message' => 'Subkriteria deleted',
                     'data' => $kriteria
                 ];
+                return response()->json($response, Response::HTTP_OK); //code...
             }
-
-            return response()->json($response, Response::HTTP_OK); //code...
         } catch (Throwable $e) {
             return response()->json([
                 'message' => "Deleting failed: " . $e->getMessage()

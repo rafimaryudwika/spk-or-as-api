@@ -39,6 +39,8 @@ class Kriteria3Controller extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('panitia', User::class);
+
         $validator = Validator::make($request->all(), [
             'kriteria' => 'required|string',
             'kode' => 'required|string',
@@ -122,6 +124,8 @@ class Kriteria3Controller extends Controller
      */
     public function update(Request $request, $id)
     {
+        $this->authorize('panitia', User::class);
+
         $kriteria = KriteriaTahap3::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -165,6 +169,8 @@ class Kriteria3Controller extends Controller
      */
     public function destroy($id)
     {
+        $this->authorize('panitia', User::class);
+
         $kriteria = KriteriaTahap3::findOrFail($id);
 
         try {
@@ -173,6 +179,7 @@ class Kriteria3Controller extends Controller
                 $response = [
                     'message' => 'Kriteria gagal dihapus karena kriteria tersebut sudah dipakai lebih dari 1 sub-kriteria, mohon hapus sub-kriteria terlebih dahulu',
                 ];
+                return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
             } else {
                 $detect2 = SubKriteriaTahap3::where('id_k3', $id)->count();
                 if ($detect2 == 1) {
@@ -189,8 +196,8 @@ class Kriteria3Controller extends Controller
                         'data' => $kriteria
                     ];
                 }
+                return response()->json($response, Response::HTTP_OK); //code...
             }
-            return response()->json($response, Response::HTTP_OK); //code...
         } catch (Throwable $e) {
             return response()->json([
                 'message' => "Deleting failed: " . $e->getMessage()

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PendaftarController;
+// use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,14 +22,15 @@ use Illuminate\Support\Facades\Route;
 
 //Protecting Routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
-    Route::get('/profile', function (Request $request) {
-        return auth()->user();
-    });
+    Route::get('/profile', 'UserController@user');
     Route::get('/fakultas', 'FakultasController@index');
     Route::get('/pendaftar', [PendaftarController::class, 'index']);
     Route::post('/pendaftar', [PendaftarController::class, 'store']);
     Route::get('/pendaftar/{nim}', [PendaftarController::class, 'show']);
 
+    Route::get('/chart', 'ChartController@index');
+
+    Route::apiResource('/users', UserController::class);
     Route::apiResource('/kriteria1', Kriteria1Controller::class);
     Route::apiResource('/kriteria2', Kriteria2Controller::class);
     Route::apiResource('/kriteria3', Kriteria3Controller::class);
