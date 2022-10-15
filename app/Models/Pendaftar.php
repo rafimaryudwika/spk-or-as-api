@@ -8,7 +8,7 @@ use GeneaLabs\LaravelModelCaching\Traits\Cachable;
 class Pendaftar extends Model
 {
     //
-    use Cachable;
+    // use Cachable;
 
     protected $table = "pendaftar";
     protected $primaryKey = "nim";
