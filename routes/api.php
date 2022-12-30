@@ -34,8 +34,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::apiResource('/kriteria1', Kriteria1Controller::class);
     Route::apiResource('/kriteria2', Kriteria2Controller::class);
     Route::apiResource('/kriteria3', Kriteria3Controller::class);
+    Route::get('/subkriteria1/t', 'SubKriteria1Controller@transpose');
     Route::apiResource('/subkriteria1', SubKriteria1Controller::class);
+    Route::get('/subkriteria2/t', 'SubKriteria2Controller@transpose');
     Route::apiResource('/subkriteria2', SubKriteria2Controller::class);
+    Route::get('/subkriteria3/t', 'SubKriteria3Controller@transpose');
     Route::apiResource('/subkriteria3', SubKriteria3Controller::class);
     Route::apiResource('/infopeserta1', DetailInfoT1Controller::class);
 
@@ -43,7 +46,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/penilaian1/show2/{nim}', 'Penilaian1Controller@show2');
     Route::get('/penilaian1/calculate', 'Penilaian1Controller@calculate');
     Route::put('/penilaian1/lulus/{nim}', 'Penilaian1Controller@lulus');
-    Route::get('/penilaian1/test', 'Penilaian1Controller@test');
+    // Route::get('/penilaian1/ratio', 'Penilaian1Controller@ratio');
     Route::apiResource('/penilaian1', Penilaian1Controller::class)->except([
         'show', 'destroy'
     ]);

@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\KriteriaTahap2;
+use App\Models\PenilaianTahap2;
 use App\Models\SubKriteriaTahap2;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -180,9 +181,16 @@ class Kriteria2Controller extends Controller
 
         try {
             $detect = SubKriteriaTahap2::where('id_k2', $id)->count();
+            $detectSubKrit = SubKriteriaTahap2::where('id_k2', $id)->pluck('id_sk2')->first();
+            $detectPeserta = PenilaianTahap2::where('id_sk2', '=', $detectSubKrit)->count();
             if ($detect > 1) {
                 $response = [
                     'message' => 'Kriteria gagal dihapus karena kriteria tersebut sudah dipakai lebih dari 1 sub-kriteria, mohon hapus sub-kriteria terlebih dahulu',
+                ];
+                return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+            } elseif ($detectPeserta >= 1) {
+                $response = [
+                    'message' => 'Kriteria gagal dihapus karena salah satu sub-kriteria sudah dipakai untuk penilaian',
                 ];
                 return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
             } else {

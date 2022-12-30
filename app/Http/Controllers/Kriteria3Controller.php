@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\KriteriaTahap3;
+use App\Models\PenilaianTahap3;
 use App\Models\SubKriteriaTahap3;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -42,8 +43,8 @@ class Kriteria3Controller extends Controller
         $this->authorize('panitia', User::class);
 
         $validator = Validator::make($request->all(), [
-            'kriteria' => 'required|string',
             'kode' => 'required|string',
+            'kriteria' => 'required|string',
             'bobot' => 'required|numeric|min:0',
         ]);
 
@@ -175,9 +176,16 @@ class Kriteria3Controller extends Controller
 
         try {
             $detect = SubKriteriaTahap3::where('id_k3', $id)->count();
+            $detectSubKrit = SubKriteriaTahap3::where('id_k3', $id)->pluck('id_sk3')->first();
+            $detectPeserta = PenilaianTahap3::where('id_sk3', '=', $detectSubKrit)->count();
             if ($detect > 1) {
                 $response = [
                     'message' => 'Kriteria gagal dihapus karena kriteria tersebut sudah dipakai lebih dari 1 sub-kriteria, mohon hapus sub-kriteria terlebih dahulu',
+                ];
+                return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+            } elseif ($detectPeserta >= 1) {
+                $response = [
+                    'message' => 'Kriteria gagal dihapus karena salah satu sub-kriteria sudah dipakai untuk penilaian',
                 ];
                 return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
             } else {

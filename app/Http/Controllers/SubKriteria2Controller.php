@@ -38,8 +38,27 @@ class SubKriteria2Controller extends Controller
             }
             return $item->makeHidden('SubKriteriaTahap2', 'created_at', 'updated_at');
         });
+
         $response = [
             'message' => 'Data sub-kriteria tahap 1 OR',
+            'data' => $data
+        ];
+
+        return response()->json($response, Response::HTTP_OK);
+    }
+
+    public function transpose()
+    {
+        $sub_k = SubKriteriaTahap2::with('KriteriaTahap2')->get();
+        $data = $sub_k->map(function ($item) {
+            $item->id_sk2 = $item->id_sk2;
+            $item->kriteria = $item->KriteriaTahap2->kriteria;
+            $item->k_sc = $item->KriteriaTahap2->k_sc;
+            return $item->makeHidden('KriteriaTahap2');
+        });
+
+        $response = [
+            'message' => 'Data sub-kriteria tahap 2 OR',
             'data' => $data
         ];
 
