@@ -46,6 +46,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/penilaian1/show2/{nim}', 'Penilaian1Controller@show2');
     Route::get('/penilaian1/calculate', 'Penilaian1Controller@calculate');
     Route::put('/penilaian1/lulus/{nim}', 'Penilaian1Controller@lulus');
+    Route::get('/penilaian1/calc-complete', 'Penilaian1Controller@calculation');
     // Route::get('/penilaian1/ratio', 'Penilaian1Controller@ratio');
     Route::apiResource('/penilaian1', Penilaian1Controller::class)->except([
         'show', 'destroy'
@@ -55,6 +56,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/penilaian2/calculate', 'Penilaian2Controller@calculate');
     Route::get('/penilaian2/test', 'Penilaian2Controller@test');
     Route::put('/penilaian2/lulus/{nim}', 'Penilaian2Controller@lulus');
+    Route::get('/penilaian2/calc-complete', 'Penilaian2Controller@calculation');
     Route::post('/penilaian2/import', 'Penilaian2Controller@import');
     Route::apiResource('/penilaian2', Penilaian2Controller::class)->except([
         'show', 'destroy'
@@ -63,6 +65,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/penilaian3/show2/{nim}', 'Penilaian3Controller@show2');
     Route::get('/penilaian3/calculate', 'Penilaian3Controller@calculate');
     Route::put('/penilaian3/lulus/{nim}', 'Penilaian3Controller@lulus');
+    Route::get('/penilaian3/calc-complete', 'Penilaian3Controller@calculation');
     Route::post('/penilaian3/import', 'Penilaian3Controller@import');
     Route::apiResource('/penilaian3', Penilaian3Controller::class)->except([
         'show', 'destroy'

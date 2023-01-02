@@ -162,6 +162,25 @@ class Penilaian3Controller extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
+    public function calculation()
+    {
+        $kriteria = new Kriteria3Controller;
+        $subkriteria = new SubKriteria3Controller;
+        $fakultas = new FakultasController;
+
+        $array['kriteria'] = $kriteria->index()->original;
+        $array['subkriteria'] = $subkriteria->index()->original;
+        $array['subkriteriatranspose'] = $subkriteria->transpose()->original;
+        $array['penilaian'] = $this->index()->original;
+        $array['fakultas'] = $fakultas->index()->original;
+
+        $response = [
+            'message' => 'Data penilaian tahap 3 OR XI beserta data pendukung',
+            'data' => $array
+        ];
+        return response()->json($response, Response::HTTP_OK);
+    }
+
     public function import()
     {
         $read = PesertaTahap2::where('lulus', '=', '1')->get();

@@ -6,9 +6,11 @@ use Throwable;
 use App\Models\Pendaftar;
 use Illuminate\Http\Request;
 use App\Models\PesertaTahap1;
+use App\Models\BidangFakultas;
 use App\Models\KriteriaTahap1;
 use App\Models\PenilaianTahap1;
 use App\Models\SubKriteriaTahap1;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -158,6 +160,27 @@ class Penilaian1Controller extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
+    public function calculation()
+    {
+        $kriteria = new Kriteria1Controller;
+        $subkriteria = new SubKriteria1Controller;
+        $fakultas = new FakultasController;
+
+        $array['kriteria'] = $kriteria->index()->original;
+        $array['subkriteria'] = $subkriteria->index()->original;
+        $array['subkriteriatranspose'] = $subkriteria->transpose()->original;
+        $array['penilaian'] = $this->index()->original;
+        $array['fakultas'] = $fakultas->index()->original;
+
+
+
+        $response = [
+            'message' => 'Data penilaian tahap 1 OR XI beserta data pendukung',
+            'data' => $array
+        ];
+        return response()->json($response, Response::HTTP_OK);
+    }
+
     public function import()
     {
         $read = Pendaftar::where('daftar_ulang', '=', '1')->get();
@@ -218,6 +241,50 @@ class Penilaian1Controller extends Controller
                 'message' => "Update kelulusan failed: " . $e->getMessage()
             ]);
         }
+    }
+
+    public function ratio()
+    {
+        function getRatio($array)
+        {
+            if (count($array) === 2) {
+                foreach ($array as $k => $v) {
+                    $data[$k] = $v['total'];
+                }
+            } else {
+                $response = ['message' => "Arraynya kurang atau lebih dari 2"];
+                return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+            $min = min([$data[0], $data[1]]);
+            $max = max([$data[0], $data[1]]);
+            $count = fdiv($max, $min);
+            if ($data[0] > $data[1]) {
+                $ratio = round($count, 2) . ':1';
+            } else {
+                $ratio = '1:' . round($count, 2);
+            }
+            $percent = round($count * 100, 2);
+            return [
+                'ratio' => "$ratio",
+                'persentase' => "$percent" . ' %',
+            ];
+        }
+        $bp = Pendaftar::query()
+            ->with(['Gender', 'PesertaTahap1', 'PenilaianTahap1.SubKriteriaTahap1.KriteriaTahap1'])
+            ->whereHas('PesertaTahap1')->whereRelation('PesertaTahap1', 'lulus', '1')
+            ->select(DB::raw('concat("20", substr(CONVERT(nim, CHAR), 1, 2)) as bp, count(*) as total'))
+            ->groupBy('bp')
+            ->get();
+        $gender = Pendaftar::query()
+            ->with(['Gender', 'PesertaTahap1'])
+            ->whereHas('PesertaTahap1')->whereRelation('PesertaTahap1', 'lulus', '1')
+            ->select('id_g', DB::raw('count(*) as total'))
+            ->groupBy('id_g')
+            ->get();
+        $bidang_fakultas = BidangFakultas::with(['Fakultas.Pendaftar.PesertaTahap1'])
+            ->has('Fakultas.Pendaftar.PesertaTahap1', '<>', null)
+            ->get();
+        return $bidang_fakultas;
     }
 
     public function store(Request $request)
