@@ -6,25 +6,25 @@ use Exception;
 use App\Traits\ResponseAPI;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Models\KriteriaTahap1;
-use App\Models\SubKriteriaTahap1;
-use App\Repositories\Kriteria1Repository;
+use App\Models\KriteriaTahap3;
+use App\Models\SubKriteriaTahap3;
+use App\Repositories\Kriteria3Repository;
 use Illuminate\Support\Facades\Validator;
-use App\Repositories\Penilaian1Repository;
-use App\Repositories\SubKriteria1Repository;
+use App\Repositories\Penilaian3Repository;
+use App\Repositories\SubKriteria3Repository;
 
-class Penilaian1Service
+class Penilaian3Service
 {
     use ResponseAPI;
-    protected $subkrit1;
-    protected $kriteria1;
-    protected $penilaian1;
+    protected $subkrit3;
+    protected $kriteria3;
+    protected $penilaian3;
     protected $request;
-    public function __construct(Kriteria1Repository $kriteria1, SubKriteria1Repository $subkrit1, Penilaian1Repository $penilaian1, Request $request)
+    public function __construct(Kriteria3Repository $kriteria3, SubKriteria3Repository $subkrit3, Penilaian3Repository $penilaian3, Request $request)
     {
-        $this->kriteria1 = $kriteria1;
-        $this->subkrit1 = $subkrit1;
-        $this->penilaian1 = $penilaian1;
+        $this->kriteria3 = $kriteria3;
+        $this->subkrit3 = $subkrit3;
+        $this->penilaian3 = $penilaian3;
         $this->request = $request;
     }
 
@@ -33,15 +33,15 @@ class Penilaian1Service
         // TODO: Refactoring kodingan manipulasi data
         //! Kodingannya sangat tidak rapi!
 
-        $pendaftar = $this->penilaian1->getDataPeserta();
-        $kriteria = $this->penilaian1->getSubKriteria();
+        $pendaftar = $this->penilaian3->getDataPeserta();
+        $kriteria = $this->penilaian3->getSubKriteria();
 
         $bobot = $kriteria->map(function ($query) {
             $name = $query->k_sc;
             $query->{$name} = $query->bobot;
-            if ($query->SubKriteriaTahap1->count() > 1) {
-                $query->sub_kriteria = $query->SubKriteriaTahap1
-                    ->groupBy('SubKriteriaTahap1.sk_sc')->map(function ($query) {
+            if ($query->SubKriteriaTahap3->count() > 1) {
+                $query->sub_kriteria = $query->SubKriteriaTahap3
+                    ->groupBy('SubKriteriaTahap3.sk_sc')->map(function ($query) {
                         return $query->mapWithKeys(function ($sub) {
                             return [$sub->sk_sc => $sub->bobot];
                         });
@@ -50,7 +50,7 @@ class Penilaian1Service
             return $query->only($query->k_sc, 'sub_kriteria');
         });
         $nilai = $pendaftar->filter(function ($query) {
-            return $query->PenilaianTahap1->isNotEmpty();
+            return $query->PenilaianTahap3->isNotEmpty();
         })->values()->map(function ($query) {
             $test['nama_panggilan'] = $query->panggilan;
             $test['e-mail'] = $query->email;
@@ -63,13 +63,13 @@ class Penilaian1Service
             $test['bidang_fakultas'] = $query->Fakultas->BidangFakultas->bidang_fak;
             $test['alamat_di_padang'] = $query->alamat_pdg;
             $query->detail = $test;
-            $query->lulus = $query->PesertaTahap1->lulus;
-            $query->nilai = $query->PenilaianTahap1
-                ->groupBy(['SubKriteriaTahap1.KriteriaTahap1.k_sc'])
+            $query->lulus = $query->PesertaTahap3->lulus;
+            $query->nilai = $query->PenilaianTahap3
+                ->groupBy(['SubKriteriaTahap3.KriteriaTahap3.k_sc'])
                 ->map(function ($query) {
                     if ($query->count() > 1) {
                         return $query->mapWithKeys(function ($sub) {
-                            return [$sub->SubKriteriaTahap1->sk_sc => $sub->nilai];
+                            return [$sub->SubKriteriaTahap3->sk_sc => $sub->nilai];
                         });
                     } else {
                         return $query->pluck('nilai')->first();
@@ -78,8 +78,8 @@ class Penilaian1Service
             return $query->only('nim', 'nama', 'nilai', 'detail', 'lulus');
         });
 
-        $max = $pendaftar->pluck('PenilaianTahap1')
-            ->flatten()->groupBy(['SubKriteriaTahap1.KriteriaTahap1.k_sc', 'SubKriteriaTahap1.sk_sc'])
+        $max = $pendaftar->pluck('PenilaianTahap3')
+            ->flatten()->groupBy(['SubKriteriaTahap3.KriteriaTahap3.k_sc', 'SubKriteriaTahap3.sk_sc'])
             ->map(function ($query) {
                 if ($query->count() > 1) {
                     return $query->map(function ($sub) {
@@ -146,8 +146,7 @@ class Penilaian1Service
             foreach ($item['normalisasi'] as $k => $v) {
                 if (is_array($v) == true) {
                     foreach ($v as $k2 => $v2) {
-                        $item['new_norm'][$k] =
-                            $v2 / $max_k[$k];
+                        $item['new_norm'][$k] = $v2 / $max_k[$k];
                     }
                 } else {
                     $item['new_norm'][$k] = $v / $max_k[$k];
@@ -174,12 +173,12 @@ class Penilaian1Service
     public function getAllData()
     {
         try {
-            $array['kriteria'] = $this->kriteria1->getAllData();
-            $array['subkriteria'] = $this->subkrit1->getAllData();
-            $array['subkriteriatranspose'] = $this->subkrit1->transposedData();
+            $array['kriteria'] = $this->kriteria3->getAllData();
+            $array['subkriteria'] = $this->subkrit3->getAllData();
+            $array['subkriteriatranspose'] = $this->subkrit3->transposedData();
             $array['penilaian'] = $this->dataManipulation();
-            $array['fakultas'] =  $this->penilaian1->getFakultas();
-            return $this->success("Data peserta tahap 1 OR XI", $array);
+            $array['fakultas'] =  $this->penilaian3->getFakultas();
+            return $this->success("Data peserta tahap 3 OR XI", $array);
         } catch (Exception $e) {
             if (!$e->getCode() || $e->getCode() === 0) return response()->json($e->__toString(), 500);
             return $this->error($e->getMessage(), $e->getCode());
@@ -190,7 +189,7 @@ class Penilaian1Service
     {
         try {
             $manipulation = $this->dataManipulation()->where('nim', $nim)->first();
-            return $this->success("Data salah peserta tahap 1 OR XI", $manipulation);
+            return $this->success("Data salah peserta tahap 3 OR XI", $manipulation);
         } catch (Exception $e) {
             if (!$e->getCode() || $e->getCode() === 0) return response()->json($e->__toString(), 500);
             return $this->error($e->getMessage(), $e->getCode());
@@ -200,16 +199,15 @@ class Penilaian1Service
     public function requestData(Request $request, $nim = null)
     {
         try {
-            $kriteria = KriteriaTahap1::get();
+            $kriteria = KriteriaTahap3::get();
             foreach ($kriteria as $k) {
-                $sub_k['kriteria_' . $k->id_k1] = SubKriteriaTahap1::where('id_k1', $k->id_k1)->get('id_sk1');
-                $multi_sub = SubKriteriaTahap1::with('KriteriaTahap1')->where('id_k1', $k->id_k1)->get();
-                //Validasi NIM hanya terjadi ketika $nim null atau saat proses create
+                $sub_k['kriteria_' . $k->id_k3] = SubKriteriaTahap3::where('id_k3', $k->id_k3)->get('id_sk3');
+                $multi_sub = SubKriteriaTahap3::with('KriteriaTahap3')->where('id_k3', $k->id_k3)->get();
                 if (!$nim) $valid['nim'] = ['required'];
                 foreach ($multi_sub as $sk) {
-                    if (count($sub_k['kriteria_' . $k->id_k1]) > 1) {
+                    if (count($sub_k['kriteria_' . $k->id_k3]) > 1) {
                         $valid[$k->k_sc . '-' . $sk->sk_sc] = ['required', 'numeric', 'min:0'];
-                    } elseif (count($sub_k['kriteria_' . $k->id_k1]) == 1) {
+                    } elseif (count($sub_k['kriteria_' . $k->id_k3]) == 1) {
                         $valid[$k->k_sc] = ['required', 'numeric', 'min:0'];
                     }
                 }
@@ -224,7 +222,7 @@ class Penilaian1Service
             }
 
             //input data-data penilaian
-            $result = $this->penilaian1->requestData($request, $nim);
+            $result = $this->penilaian3->requestData($request, $nim);
 
             //mencari data penilaian dari NIM yang sudah dicreate atau berdasarkan NIM saat update
             $total = !$nim
@@ -276,7 +274,7 @@ class Penilaian1Service
                     Response::HTTP_UNPROCESSABLE_ENTITY
                 );
             }
-            $lulus = $this->penilaian1->lulus($validator, $nim);
+            $lulus = $this->penilaian3->lulus($validator, $nim);
             return $this->success("Update kelulusan success", $lulus);
         } catch (Exception $e) {
             if (!$e->getCode() || $e->getCode() === 0) return response()->json($e->__toString(), 500);
@@ -292,12 +290,12 @@ class Penilaian1Service
 
         $data['lulus'] = $params;
 
-        return $this->penilaian1->lulus($data, $nim);
+        return $this->penilaian3->lulus($data, $nim);
     }
     public function import()
     {
         try {
-            $import = $this->penilaian1->import();
+            $import = $this->penilaian3->import();
             return $this->success('Import peserta dari pendaftar berhasil', $import, 200);
         } catch (Exception $e) {
             if (!$e->getCode() || $e->getCode() === 0) return response()->json($e->__toString(), 500);

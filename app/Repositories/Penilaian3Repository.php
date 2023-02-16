@@ -5,32 +5,33 @@ namespace App\Repositories;
 use Exception;
 use App\Models\Fakultas;
 use App\Models\Pendaftar;
-use App\Models\PesertaTahap1;
-use App\Models\KriteriaTahap1;
-use App\Models\PenilaianTahap1;
-use App\Models\SubKriteriaTahap1;
+use App\Models\PesertaTahap2;
+use App\Models\PesertaTahap3;
+use App\Models\KriteriaTahap3;
+use App\Models\PenilaianTahap3;
+use App\Models\SubKriteriaTahap3;
 
-class Penilaian1Repository
+class Penilaian3Repository
 {
     protected $pendaftar;
-    protected $penilaian1;
-    protected $subkrit1;
-    protected $kriteria1;
+    protected $penilaian3;
+    protected $subkrit3;
+    protected $kriteria3;
     protected $peserta;
 
-    public function ___construct(Pendaftar $pendaftar, PenilaianTahap1 $penilaian1, KriteriaTahap1 $kriteria1, SubKriteriaTahap1 $subkrit1, PesertaTahap1 $peserta)
+    public function ___construct(Pendaftar $pendaftar, PenilaianTahap3 $penilaian3, KriteriaTahap3 $kriteria3, SubKriteriaTahap3 $subkrit3, PesertaTahap3 $peserta)
     {
         $this->pendaftar = $pendaftar;
-        $this->penilaian1 = $penilaian1;
-        $this->kriteria1 = $kriteria1;
-        $this->subkrit1 = $subkrit1;
+        $this->penilaian3 = $penilaian3;
+        $this->kriteria3 = $kriteria3;
+        $this->subkrit3 = $subkrit3;
         $this->peserta = $peserta;
     }
     public function getDataPeserta()
     {
         $pendaftar = Pendaftar::query()
-            ->with(['Gender', 'Jurusan', 'Fakultas.BidangFakultas', 'PesertaTahap1', 'PenilaianTahap1.SubKriteriaTahap1.KriteriaTahap1'])
-            ->whereHas('PesertaTahap1')
+            ->with(['Gender', 'Jurusan', 'Fakultas.BidangFakultas', 'PesertaTahap3', 'PenilaianTahap3.SubKriteriaTahap3.KriteriaTahap3'])
+            ->whereHas('PesertaTahap3')
             ->get();
 
         return $pendaftar;
@@ -38,7 +39,7 @@ class Penilaian1Repository
 
     public function getSubKriteria()
     {
-        $kriteria = KriteriaTahap1::query()->with(['SubKriteriaTahap1'])
+        $kriteria = KriteriaTahap3::query()->with(['SubKriteriaTahap3'])
             ->get();
 
         return $kriteria;
@@ -51,20 +52,20 @@ class Penilaian1Repository
 
     public function requestData($data, $nim = null)
     {
-        $check = !$nim ? PesertaTahap1::where('nim', $data->nim)->firstOrFail() : PesertaTahap1::where('nim', $nim)->firstOrFail();
+        $check = !$nim ? PesertaTahap3::where('nim', $data->nim)->firstOrFail() : PesertaTahap3::where('nim', $nim)->firstOrFail();
 
         if (!$check) throw new Exception('NIM tidak ada di data peserta! Pastikan NIM tersebut terdaftar di data peserta!', 404);
 
-        $kriteria = KriteriaTahap1::all();
-        $subkriteria = SubKriteriaTahap1::query()->pluck('id_sk1')->toArray();
+        $kriteria = KriteriaTahap3::all();
+        $subkriteria = SubKriteriaTahap3::query()->pluck('id_sk3')->toArray();
 
         foreach ($kriteria as $k) {
-            $sub_k['kriteria_' . $k->id_k1] = SubKriteriaTahap1::where('id_k1', $k->id_k1)->get('id_sk1');
-            $multi_sub = SubKriteriaTahap1::with('KriteriaTahap1')->where('id_k1', $k->id_k1)->get();
+            $sub_k['kriteria_' . $k->id_k3] = SubKriteriaTahap3::where('id_k3', $k->id_k3)->get('id_sk3');
+            $multi_sub = SubKriteriaTahap3::with('KriteriaTahap3')->where('id_k3', $k->id_k3)->get();
             foreach ($multi_sub as $sk) {
-                if (count($sub_k['kriteria_' . $k->id_k1]) > 1) {
+                if (count($sub_k['kriteria_' . $k->id_k3]) > 1) {
                     $nilai_sk[] = $k->k_sc . '-' . $sk->sk_sc;
-                } elseif (count($sub_k['kriteria_' . $k->id_k1]) == 1) {
+                } elseif (count($sub_k['kriteria_' . $k->id_k3]) == 1) {
                     $nilai_sk[] = $k->k_sc;
                 }
             }
@@ -74,11 +75,11 @@ class Penilaian1Repository
             foreach (array_combine($subkriteria, $nilai_sk) as $sk => $ns) {
                 $bulk_insert[] = [
                     'nim' => $data->nim,
-                    'id_sk1' => $sk,
+                    'id_sk3' => $sk,
                     'nilai' => $data->$ns
                 ];
             }
-            $requestData =  PenilaianTahap1::insert($bulk_insert);
+            $requestData =  PenilaianTahap3::insert($bulk_insert);
         } else {
             foreach ($nilai_sk as $ns) {
                 $bulk_update[] = [
@@ -87,7 +88,7 @@ class Penilaian1Repository
             }
             $requestData = '';
             foreach (array_combine($subkriteria, $bulk_update) as $sk => $bulk) {
-                $requestData .= PenilaianTahap1::where('nim', $nim)->where('id_sk1', $sk)
+                $requestData .= PenilaianTahap3::where('nim', $nim)->where('id_sk3', $sk)
                     ->update($bulk);
             }
         }
@@ -96,19 +97,19 @@ class Penilaian1Repository
 
     public function lulus($data, $id)
     {
-        $lulus = PesertaTahap1::where('nim', $id)->firstOrFail();
+        $lulus = PesertaTahap3::where('nim', $id)->firstOrFail();
         $lulus->lulus = $data['lulus'];
         return $lulus->update();
     }
 
     public function import()
     {
-        $read = Pendaftar::where('daftar_ulang', '=', '1')->get();
+        $read = PesertaTahap2::where('lulus', '=', '1')->get();
         foreach ($read as $i => $r) {
             $new[$i]['nim'] = $r->nim;
             $new[$i]['lulus'] = 0;
         }
-        $exist = PesertaTahap1::get();
+        $exist = PesertaTahap3::get();
         $exist = $exist->pluck('nim');
         $filter = collect($new)->reject(function ($value) use ($exist) {
             return $exist->contains($value['nim']);
@@ -117,6 +118,6 @@ class Penilaian1Repository
 
         if ($filterArray == null) throw new Exception('Tidak ada data yg diimport', 204);
 
-        return PesertaTahap1::insert($filterArray);
+        return PesertaTahap3::insert($filterArray);
     }
 }
