@@ -14,9 +14,10 @@ class CreateFakultasTable extends Migration
     public function up()
     {
         Schema::create('fakultas', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('bidang_f_id');
+            $table->id('id_f');
+            $table->unsignedBigInteger('id_bf');
             $table->string('fakultas');
+            $table->foreign('id_bf')->references('id_bf')->on('bidang_fakultas');
         });
     }
 

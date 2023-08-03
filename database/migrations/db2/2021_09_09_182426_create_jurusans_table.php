@@ -14,9 +14,12 @@ class CreateJurusansTable extends Migration
     public function up()
     {
         Schema::create('jurusans', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('fakultas_id');
+            $table->id('id_j');
+            $table->unsignedBigInteger('id_f');
+            $table->unsignedBigInteger('id_bf');
             $table->string('jurusan');
+            $table->foreign('id_f')->references('id_f')->on('fakultas');
+            $table->foreign('id_bf')->references('id_bf')->on('fakultas');
         });
     }
 

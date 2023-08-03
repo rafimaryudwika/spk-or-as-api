@@ -18,6 +18,6 @@ class Jurusan extends Model
     }
     public function Pendaftar()
     {
-        return $this->hasMany(Pendaftar::class);
+        return $this->hasMany(Pendaftar::class, 'id_j');
     }
 }

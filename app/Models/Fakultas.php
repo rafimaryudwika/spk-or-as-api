@@ -7,9 +7,9 @@ use GeneaLabs\LaravelModelCaching\Traits\Cachable;
 
 class Fakultas extends Model
 {
-    use Cachable;
+    // use Cachable;
 
-    protected $appends = ['n_pendaftar'];
+    // protected $appends = ['total'];
     protected $table = "fakultas";
     protected $primaryKey = 'id_f';
 
@@ -19,18 +19,14 @@ class Fakultas extends Model
     }
     public function Jurusan()
     {
-        return $this->hasMany(Jurusan::class);
+        return $this->hasMany(Jurusan::class, 'id_f');
     }
     public function Pendaftar()
     {
         return $this->hasMany(Pendaftar::class, 'id_f');
     }
-    public function getNBidangFakultas()
-    {
-        return $this->BidangFakultas->count();
-    }
-    public function getNPendaftarAttribute()
-    {
-        return $this->Pendaftar->count();
-    }
+    // public function getTotalAttribute()
+    // {
+    //     return $this->Pendaftar->count();
+    // }
 }

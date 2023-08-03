@@ -13,22 +13,20 @@ class CreatePendaftarsTable extends Migration
      */
     public function up()
     {
-        Schema::create('pendaftars', function (Blueprint $table) {
+        Schema::create('pendaftar', function (Blueprint $table) {
             $table->timestamp('tgl_daftar');
             $table->id('nim')->unique();
-            $table->string('email');
+            $table->string('email')->unique();
             $table->string('nama');
             $table->string('panggilan');
-            $table->foreignId('gender_id');
+            $table->foreignId('id_g')->constrained('gender');
             $table->string('tempat_lahir');
             $table->date('tgl_lahir');
+            $table->foreignId('id_j')->constrained('jurusan');
             $table->string('alamat_pdg');
-            $table->bigInteger('no_hp');
-            $table->boolean('daftar_ulang');
+            $table->bigInteger('no_hp')->unique();
             $table->bigInteger('periode');
-            $table->foreign('gender_id')->references('id')->on('gender');
-            $table->foreign('fakultas_id')->references('id')->on('fakultas');
-            $table->foreign('jurusan_id')->references('id')->on('jurusan');
+            $table->boolean('daftar_ulang');
         });
     }
 

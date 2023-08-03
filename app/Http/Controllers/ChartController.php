@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Fakultas;
 use App\Models\Pendaftar;
 use Illuminate\Http\Request;
 use App\Models\BidangFakultas;
@@ -17,15 +18,37 @@ class ChartController extends Controller
      */
     public function index()
     {
+        function getRatio($array)
+        {
+            if (count($array) === 2) {
+                foreach ($array as $k => $v) {
+                    $data[$k] = $v['total'];
+                }
+            } else {
+                $response = ['message' => "Arraynya kurang atau lebih dari 2"];
+                return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+            $min = min([$data[0], $data[1]]);
+            $max = max([$data[0], $data[1]]);
+            $count = fdiv($max, $min);
+            if ($data[0] > $data[1]) {
+                $ratio = round($count, 2) . ':1';
+            } else {
+                $ratio = '1:' . round($count, 2);
+            }
+            $percent = round($count * 100, 2);
+            return [
+                'ratio' => "$ratio",
+                'persentase' => "$percent" . ' %',
+            ];
+        }
+
         $gender = Pendaftar::query()
             ->with(['Gender'])->select('id_g', DB::raw('count(*) as total'))
             ->groupBy('id_g')
             ->get();
 
-        $fakultas = Pendaftar::query()
-            ->with(['Fakultas'])->select('id_f', DB::raw('count(*) as total'))
-            ->groupBy('id_f')
-            ->get();
+        $fakultas = Fakultas::get();
 
         $bp = Pendaftar::query()
             ->select(DB::raw('concat("20", substr(CONVERT(nim, CHAR), 1, 2)) as bp, count(*) as total'))
@@ -44,12 +67,15 @@ class ChartController extends Controller
                     'bidang_fak' => $bidangFakultas->bidang_fak,
                     'total' => $bidangFakultas->n_pendaftar,
                 ];
-            });
+            })->toArray();
 
         $chart['gender'] = $gender;
+        $chart['gender_ratio'] = getRatio($gender);
         $chart['fakultas'] = $fakultas;
         $chart['bp'] = $bp;
+        $chart['bp_ratio'] = getRatio($bp);
         $chart['bidang_fakultas'] = $bidang_fak;
+        $chart['bidang_fakultas_ratio'] = getRatio($bidang_fak);
         $chart['tgl_daftar'] = $date;
         $response = [
             'message' => 'Data chart',
